@@ -15,6 +15,7 @@ declare global {
 
       OWNER_ID: string;
       DEV_GUILD_ID: string;
+      DEV_CHANNEL_ID: string;
 
       FIREBASE_PROJECT_ID: string;
       FIREBASE_DATABASE_URL: string;
@@ -44,6 +45,7 @@ const client = new Client({
     GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.MessageContent,
   ],
   partials: [Partials.Message, Partials.Channel, Partials.Reaction, Partials.User],
   presence: {
