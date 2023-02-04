@@ -1,5 +1,6 @@
+import { ActivityType, Client, GatewayDispatchEvents, GatewayIntentBits, Partials } from "discord.js";
 import { GatewayServer, SlashCreator, Util } from "slash-create";
-import { Client } from "discord.js";
+import { initializeApp, cert } from "firebase-admin/app";
 import { join, extname, basename } from "path";
 import CatLoggr from "cat-loggr/ts";
 
@@ -23,19 +24,30 @@ declare global {
   }
 }
 
+// Initialize Firebase
+initializeApp({
+  credential: cert({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+  }),
+  // databaseURL: process.env.FIREBASE_DATABASE_URL,
+});
+
 // Create our discord.js client
 const client = new Client({
   intents: [
-    "GUILDS",
-    "GUILD_MEMBERS",
-    "GUILD_BANS",
-    "GUILD_EMOJIS_AND_STICKERS",
-    "GUILD_VOICE_STATES",
-    "GUILD_MESSAGES",
-    "GUILD_MESSAGE_REACTIONS",
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildModeration,
+    GatewayIntentBits.GuildEmojisAndStickers,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.GuildMessageReactions,
   ],
+  partials: [Partials.Message, Partials.Channel, Partials.Reaction, Partials.User],
   presence: {
-    activities: [{ name: `MM8BDM`, type: "COMPETING" }],
+    activities: [{ name: `MM8BDM`, type: ActivityType.Competing }],
     status: "online",
   },
 });
@@ -86,7 +98,7 @@ creator.on("commandError", (command, error) => logger.error(`Command ${command.c
 // Register our commands
 // Then sync our commands with Discord
 creator
-  .withServer(new GatewayServer((handler) => client.ws.on("INTERACTION_CREATE", handler)))
+  .withServer(new GatewayServer((handler) => client.ws.on(GatewayDispatchEvents.InteractionCreate, handler)))
   .registerCommandsIn(join(__dirname, "commands"))
   .syncCommands();
 

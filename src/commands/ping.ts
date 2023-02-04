@@ -5,6 +5,7 @@ export default class PingCommand extends SlashCommand {
     super(creator, {
       name: "ping",
       description: "Check if I'm paying attention.",
+      dmPermission: false,
     });
   }
 
