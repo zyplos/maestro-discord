@@ -137,6 +137,14 @@ module.exports = async (client: Client, messageDeleted: Message) => {
   });
   reportText += attachmentCount > 0 ? "\n" : "";
 
+  // embed report
+  const embedCount = messageDeleted.embeds.length;
+  reportText += `Message had **${pluralize(embedCount, "embed")}.** `;
+  reportText +=
+    embedCount > 5
+      ? "Appending the first 5 to the end of this report."
+      : "They will be appended to the end of this report.";
+
   const msgEmbed = new EmbedBuilder()
     .setTitle("Message Deleted")
     .setDescription(formattedText)
@@ -153,5 +161,5 @@ module.exports = async (client: Client, messageDeleted: Message) => {
     )
     .addFields({ name: "Info", value: reportText });
 
-  return logChannel.send({ content: "\t", embeds: [msgEmbed] });
+  return logChannel.send({ content: "\t", embeds: [...[msgEmbed], ...messageDeleted.embeds.slice(0, 5)] });
 };
