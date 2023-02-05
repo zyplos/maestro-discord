@@ -1,5 +1,5 @@
 import { Client, Message, EmbedBuilder, escapeCodeBlock, AuditLogEvent, GuildAuditLogsEntry } from "discord.js";
-import { getGuildLogChannel } from "../internals/util";
+import { getGuildLogChannel, isStringBlank, pluralize } from "../internals/util";
 
 function parseAuditLogEntry(
   deletionLog: GuildAuditLogsEntry<AuditLogEvent.MessageDelete> | undefined,
@@ -25,6 +25,33 @@ function parseAuditLogEntry(
 
   if (target.id !== authorId) return false;
   return { executorString, targetString };
+}
+
+// "'extension' is possibly 'undefined'."
+function truncateFileName(fileName: string | null): string {
+  if (!fileName) return "(no file name)";
+
+  const maxLength = 30;
+  const extIndex = fileName.lastIndexOf(".");
+
+  // file has no extension
+  if (extIndex == -1) {
+    if (fileName.length >= maxLength) {
+      return fileName.substring(maxLength) + " (truncated)";
+    } else {
+      return fileName;
+    }
+  }
+
+  const name = fileName.substring(0, extIndex);
+  const extension = fileName.substring(extIndex + 1, fileName.length);
+
+  // no truncation needed
+  if (fileName.length <= maxLength) {
+    return name + "." + extension;
+  } else {
+    return name.substring(0, maxLength) + "." + extension + " (truncated)";
+  }
 }
 
 module.exports = async (client: Client, messageDeleted: Message) => {
@@ -71,21 +98,48 @@ module.exports = async (client: Client, messageDeleted: Message) => {
     return logChannel.send({ content: "\t", embeds: [msgEmbed] });
   }
 
-  const text = escapeCodeBlock(messageDeleted.content);
+  let formattedText;
+  if (isStringBlank(messageDeleted.content)) {
+    formattedText = "(this message was empty)";
+  } else {
+    const text = escapeCodeBlock(messageDeleted.content);
+
+    const textLenghtFormat = text.length > 4000 ? text.slice(0, 4000) + "... (truncated)" : text;
+    formattedText = "```\n" + textLenghtFormat + "\n```";
+  }
+
   const hasSwear = true;
+  const swearCheck = hasSwear ? ":no_entry_sign: (Message flagged by swear check)\n" : "";
 
   const userString = `${messageDeleted.author} (${messageDeleted.author.tag} ${messageDeleted.author.id})`;
 
-  const swearCheck = hasSwear ? ":no_entry_sign: (Message flagged by swear check)\n" : "";
-  const formattedText = "```\n" + text + "\n```";
+  let reportText = `A message from **${userString}** was deleted in ${channelString}\n`;
+  reportText += swearCheck + "\n";
+  reportText += auditLogData ? auditLogData.executorString + "\n" : "";
+
+  // activity
+  // applicationId
+  // flags
+  // hasThread
+  // pinned
+  // system
+  // type
+  // webhookId
+
+  // attachments report
+  const attachments = messageDeleted.attachments;
+  const attachmentCount = attachments.size;
+  reportText += `Message contained **${pluralize(attachmentCount, "attachment")}**:\n`;
+  attachments.forEach(({ name, contentType, size, proxyURL }, _id) => {
+    const fileName = truncateFileName(name);
+    const fileType = contentType ? contentType : "(unknown type)";
+    reportText += `_**${fileName}**_ - ${fileType} (${size}B) [(old link)](${proxyURL})\n`;
+  });
+  reportText += attachmentCount > 0 ? "\n" : "";
 
   const msgEmbed = new EmbedBuilder()
     .setTitle("Message Deleted")
-    .setDescription(
-      `A message from **${userString}** was deleted in ${channelString}\n${swearCheck}${
-        auditLogData ? auditLogData.executorString : ""
-      }` + formattedText
-    )
+    .setDescription(formattedText)
     .setColor(0xff3e3e)
     .setTimestamp(messageDeleted.createdTimestamp)
     .setFooter({
@@ -96,7 +150,8 @@ module.exports = async (client: Client, messageDeleted: Message) => {
         extension: "png",
         size: 128,
       })}`
-    );
+    )
+    .addFields({ name: "Info", value: reportText });
 
   return logChannel.send({ content: "\t", embeds: [msgEmbed] });
 };

@@ -27,3 +27,13 @@ export async function getGuildLogChannel(client: Client, _guildId: string) {
 
   return logChannel;
 }
+
+// https://stackoverflow.com/a/3261380
+export function isStringBlank(str: string) {
+  return !str || /^\s*$/.test(str);
+}
+
+// https://stackoverflow.com/a/39835908
+export function pluralize(count: number, noun: string, suffix = "s") {
+  return `${count} ${noun}${count !== 1 ? suffix : ""}`;
+}
