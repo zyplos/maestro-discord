@@ -73,7 +73,7 @@ module.exports = async (_client: Client, channel: DMChannel | NonThreadGuildBase
 
   const msgEmbed = new EmbedBuilder()
     .setTitle("Channel Deleted")
-    .setDescription(`**${channelType} "${escapeMarkdown(channel.name)}" (${channel.id}) ** was deleted.\n${reportText}`)
+    .setDescription(`${channelType} **${escapeMarkdown(channel.name)} (${channel.id})** was deleted.\n${reportText}`)
     .setColor(0xff0000)
     .setTimestamp(new Date());
 

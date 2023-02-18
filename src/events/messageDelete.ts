@@ -9,7 +9,7 @@ import {
   DiscordjsError,
   AttachmentBuilder,
 } from "discord.js";
-import { getGuildLogChannel, isStringBlank, pluralize } from "../internals/util";
+import { getGuildLogChannel, isStringBlank, pluralize, truncateFileName } from "../internals/util";
 
 function parseAuditLogEntry(
   deletionLog: GuildAuditLogsEntry<AuditLogEvent.MessageDelete> | undefined,
@@ -35,33 +35,6 @@ function parseAuditLogEntry(
 
   if (target.id !== authorId) return null;
   return { executorString, targetString };
-}
-
-// "'extension' is possibly 'undefined'."
-function truncateFileName(fileName: string | null): string {
-  if (!fileName) return "(no file name)";
-
-  const maxLength = 30;
-  const extIndex = fileName.lastIndexOf(".");
-
-  // file has no extension
-  if (extIndex == -1) {
-    if (fileName.length >= maxLength) {
-      return fileName.substring(maxLength) + " (truncated)";
-    } else {
-      return fileName;
-    }
-  }
-
-  const name = fileName.substring(0, extIndex);
-  const extension = fileName.substring(extIndex + 1, fileName.length);
-
-  // no truncation needed
-  if (fileName.length <= maxLength) {
-    return name + "." + extension;
-  } else {
-    return name.substring(0, maxLength) + "." + extension + " (truncated)";
-  }
 }
 
 module.exports = async (client: Client, messageDeleted: Message) => {
@@ -165,6 +138,11 @@ module.exports = async (client: Client, messageDeleted: Message) => {
     reportText += "This was a pinned message.\n";
   }
 
+  // stickers
+  if (messageDeleted.stickers.size > 0) {
+    reportText += "This message had stickers.\n";
+  }
+
   // system
   if (messageDeleted.system) {
     reportText += "This message was a system notification.\n";
@@ -221,6 +199,9 @@ module.exports = async (client: Client, messageDeleted: Message) => {
         break;
       case MessageType.StageTopic:
         reportText += "This message was stage topic system notification.";
+        break;
+      case MessageType.Reply:
+        reportText += "This message was a reply to someone.";
         break;
     }
 

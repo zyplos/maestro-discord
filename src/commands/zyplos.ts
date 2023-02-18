@@ -18,6 +18,10 @@ export default class ZyplosCommand extends SlashCommand {
 
     this.client.emit("guildMemberAdd", member);
 
-    return { content: Math.random() > 0.5 ? "heads" : "tails" };
+    // return { content: Math.random() > 0.5 ? "heads" : "tails" };
+    return {
+      content:
+        "```ansi\n\u001b[0;40m\u001b[1;32mThat's some cool formatted text right?\u001b[0m or \u001b[1;40;32mThat's some cool formatted text right?\u001b[0m\n```",
+    };
   }
 }

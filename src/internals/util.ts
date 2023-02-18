@@ -37,3 +37,30 @@ export function isStringBlank(str: string) {
 export function pluralize(count: number, noun: string, suffix = "s") {
   return `${count} ${noun}${count !== 1 ? suffix : ""}`;
 }
+
+// i made this me mine it took a while but i did it,
+export function truncateFileName(fileName: string | null): string {
+  if (!fileName) return "(no file name)";
+
+  const maxLength = 30;
+  const extIndex = fileName.lastIndexOf(".");
+
+  // file has no extension
+  if (extIndex == -1) {
+    if (fileName.length >= maxLength) {
+      return fileName.substring(maxLength) + " (truncated)";
+    } else {
+      return fileName;
+    }
+  }
+
+  const name = fileName.substring(0, extIndex);
+  const extension = fileName.substring(extIndex + 1, fileName.length);
+
+  // no truncation needed
+  if (fileName.length <= maxLength) {
+    return name + "." + extension;
+  } else {
+    return name.substring(0, maxLength) + "." + extension + " (truncated)";
+  }
+}
