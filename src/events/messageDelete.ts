@@ -1,4 +1,14 @@
-import { Client, Message, EmbedBuilder, escapeCodeBlock, AuditLogEvent, GuildAuditLogsEntry } from "discord.js";
+import {
+  Client,
+  Message,
+  EmbedBuilder,
+  AuditLogEvent,
+  GuildAuditLogsEntry,
+  escapeMarkdown,
+  MessageType,
+  DiscordjsError,
+  AttachmentBuilder,
+} from "discord.js";
 import { getGuildLogChannel, isStringBlank, pluralize } from "../internals/util";
 
 function parseAuditLogEntry(
@@ -6,12 +16,12 @@ function parseAuditLogEntry(
   authorId: string | null,
   channelId: string
 ) {
-  if (!deletionLog) return false;
+  if (!deletionLog) return null;
 
   const { executor, target, extra } = deletionLog;
   console.log("deletionLog", deletionLog);
 
-  if (!executor) return false;
+  if (!executor) return null;
   const executorString = `🛡️ Deleted by ${executor} (${executor.tag} ${executor.id})\n`;
   const targetString = `👤 Sent by ${target} (${target.tag} ${target.id})`;
 
@@ -19,11 +29,11 @@ function parseAuditLogEntry(
     if (extra.channel && extra.channel.id == channelId) {
       return { executorString, targetString };
     } else {
-      return false;
+      return null;
     }
   }
 
-  if (target.id !== authorId) return false;
+  if (target.id !== authorId) return null;
   return { executorString, targetString };
 }
 
@@ -63,12 +73,18 @@ module.exports = async (client: Client, messageDeleted: Message) => {
 
   console.log("messageDeleted", messageDeleted);
 
-  const fetchedLogs = await messageDeleted.guild.fetchAuditLogs({
-    limit: 1,
-    type: AuditLogEvent.MessageDelete,
-  });
-  const deletionLog = fetchedLogs.entries.first();
-  const auditLogData = parseAuditLogEntry(deletionLog, messageDeleted.author?.id, messageDeleted.channelId);
+  let auditLogData = null;
+  let auditLogFailed = false;
+  try {
+    const fetchedLogs = await messageDeleted.guild.fetchAuditLogs({
+      limit: 1,
+      type: AuditLogEvent.MessageDelete,
+    });
+    const deletionLog = fetchedLogs.entries.first();
+    auditLogData = parseAuditLogEntry(deletionLog, messageDeleted.author?.id, messageDeleted.channelId);
+  } catch (error) {
+    auditLogFailed = true;
+  }
 
   const messageChannel = messageDeleted.channel;
   const channelName = messageChannel.isTextBased() && !messageChannel.isDMBased() && messageChannel.name;
@@ -82,6 +98,10 @@ module.exports = async (client: Client, messageDeleted: Message) => {
       auditLogString += "Server Audit Log's last detected deleted message in that channel:\n";
       auditLogString += auditLogData.targetString + "\n";
       auditLogString += auditLogData.executorString + "\n";
+    }
+    if (auditLogFailed) {
+      auditLogString +=
+        "Couldn't get the server's Audit Log to get extra info. Please make sure I have the \"View Audit Log\" permission.\n";
     }
 
     const msgEmbed = new EmbedBuilder()
@@ -102,51 +122,113 @@ module.exports = async (client: Client, messageDeleted: Message) => {
   if (isStringBlank(messageDeleted.content)) {
     formattedText = "(this message was empty)";
   } else {
-    const text = escapeCodeBlock(messageDeleted.content);
+    // const text = escapeCodeBlock(messageDeleted.content);
 
-    const textLenghtFormat = text.length > 4000 ? text.slice(0, 4000) + "... (truncated)" : text;
-    formattedText = "```\n" + textLenghtFormat + "\n```";
+    // const textLenghtFormat = text.length > 4000 ? text.slice(0, 4000) + "... (truncated)" : text;
+    // formattedText = "```\n" + textLenghtFormat + "\n```";
+    formattedText = messageDeleted.content;
   }
-
-  const hasSwear = true;
-  const swearCheck = hasSwear ? ":no_entry_sign: (Message flagged by swear check)\n" : "";
 
   const userString = `${messageDeleted.author} (${messageDeleted.author.tag} ${messageDeleted.author.id})`;
 
   let reportText = `A message from **${userString}** was deleted in ${channelString}\n`;
-  reportText += swearCheck + "\n";
-  reportText += auditLogData ? auditLogData.executorString + "\n" : "";
+  if (auditLogFailed) {
+    reportText +=
+      "Couldn't get the server's Audit Log to get extra info. Please make sure I have the \"View Audit Log\" permission.\n";
+  } else {
+    reportText += auditLogData ? auditLogData.executorString + "\n" : "";
+  }
+
+  // flags
+  const messageFlags = messageDeleted.flags.serialize();
+  if (messageFlags.Crossposted) reportText += "This message was published to servers following this channel.\n";
+  if (messageFlags.IsCrosspost) reportText += "This message was sent from a followed channel.\n";
+  if (messageFlags.Urgent) reportText += "This message was an official message from Discord.\n";
+  if (messageFlags.Loading) reportText += "This was an interaction from a bot that didn't finish responding.\n";
 
   // activity
+  if (messageDeleted.activity) {
+    if (messageDeleted.activity?.partyId?.includes("spotify")) {
+      reportText += "This message contained a Spotify listen along invite.\n";
+    } else {
+      reportText += "This message contained a game invite.\n";
+    }
+  }
+
   // applicationId
-  // flags
-  // hasThread
+  if (messageDeleted.applicationId) {
+    reportText += `This message was sent by an application (${messageDeleted.applicationId}).\n`;
+  }
+
   // pinned
+  if (messageDeleted.pinned) {
+    reportText += "This was a pinned message.\n";
+  }
+
   // system
+  if (messageDeleted.system) {
+    reportText += "This message was a system notification.\n";
+  }
+
   // type
-  // webhookId
+  const messageType = messageDeleted.type;
+  if (messageType) {
+    switch (messageType) {
+      case MessageType.ChannelPinnedMessage:
+        reportText += "This was a pinned message system notification.";
+        break;
+      case MessageType.UserJoin:
+        reportText += "This was a member join system notification.";
+        break;
+      case MessageType.GuildBoost:
+        reportText += "This was a guild boost notification.";
+        break;
+      case MessageType.GuildBoostTier1:
+        reportText += "This was a tier 1 guild boost notification.";
+        break;
+      case MessageType.GuildBoostTier2:
+        reportText += "This was a tier 2 guild boost notification.";
+        break;
+      case MessageType.GuildBoostTier3:
+        reportText += "This was a tier 3 guild boost notification.";
+        break;
+      case MessageType.ChannelFollowAdd:
+        reportText += "This was a following channel notification.";
+        break;
+      case MessageType.ThreadCreated:
+        reportText += "This was a thread created system notification.";
+        break;
+      case MessageType.ChatInputCommand:
+        reportText += "This message is a bot's response to a chat command.";
+        break;
+      case MessageType.ContextMenuCommand:
+        reportText += "This message is a bot's response to a context menu command.";
+        break;
+      case MessageType.AutoModerationAction:
+        reportText += ":no_entry_sign: **This was an AutoMod notification that flagged this user's message.**";
+        break;
+      case MessageType.RoleSubscriptionPurchase:
+        reportText += "This message was a role subscription purchase notification.";
+        break;
+      case MessageType.StageStart:
+        reportText += "This message was stage start system notification.";
+        break;
+      case MessageType.StageEnd:
+        reportText += "This message was stage end system notification.";
+        break;
+      case MessageType.StageSpeaker:
+        reportText += "This message was stage speaker system notification.";
+        break;
+      case MessageType.StageTopic:
+        reportText += "This message was stage topic system notification.";
+        break;
+    }
 
-  // attachments report
-  const attachments = messageDeleted.attachments;
-  const attachmentCount = attachments.size;
-  reportText += `Message contained **${pluralize(attachmentCount, "attachment")}**:\n`;
-  attachments.forEach(({ name, contentType, size, proxyURL }, _id) => {
-    const fileName = truncateFileName(name);
-    const fileType = contentType ? contentType : "(unknown type)";
-    reportText += `_**${fileName}**_ - ${fileType} (${size}B) [(old link)](${proxyURL})\n`;
-  });
-  reportText += attachmentCount > 0 ? "\n" : "";
-
-  // embed report
-  const embedCount = messageDeleted.embeds.length;
-  reportText += `Message had **${pluralize(embedCount, "embed")}.** `;
-  reportText +=
-    embedCount > 5
-      ? "Appending the first 5 to the end of this report."
-      : "They will be appended to the end of this report.";
+    reportText += "\n";
+  }
 
   const msgEmbed = new EmbedBuilder()
-    .setTitle("Message Deleted")
+    .setTitle("Message Deleted:")
     .setDescription(formattedText)
     .setColor(0xff3e3e)
     .setTimestamp(messageDeleted.createdTimestamp)
@@ -159,7 +241,87 @@ module.exports = async (client: Client, messageDeleted: Message) => {
         size: 128,
       })}`
     )
-    .addFields({ name: "Info", value: reportText });
+    .addFields({ name: "===== Message Report =====", value: reportText });
 
-  return logChannel.send({ content: "\t", embeds: [...[msgEmbed], ...messageDeleted.embeds.slice(0, 5)] });
+  // These are added as fields as they might break the 1024 character limit if it were all in just one field.
+
+  // interaction (user commands)
+  if (messageDeleted.interaction) {
+    msgEmbed.addFields({
+      name: "User Interaction",
+      value: `This message responded to the following command: **${messageDeleted.interaction.commandName}**`,
+    });
+  }
+
+  // hasThread
+  if (messageDeleted.hasThread) {
+    const thread = messageDeleted.thread;
+    if (thread) {
+      msgEmbed.addFields({
+        name: "Thread",
+        value: `This was the start of the ${thread} (${thread.name} [${thread.id}]) thread.`,
+      });
+    } else {
+      msgEmbed.addFields({ name: "Thread", value: "This was the start of a thread." });
+    }
+  }
+
+  // webhookId
+  const isFromAWebhook = messageDeleted.webhookId;
+  if (isFromAWebhook) {
+    try {
+      const webhookReference = await messageDeleted.fetchWebhook();
+      msgEmbed.addFields({
+        name: "Webhook",
+        value: `This message was sent by the **${escapeMarkdown(webhookReference.name)} (${isFromAWebhook})** webhook.`,
+      });
+    } catch (error) {
+      if (error instanceof DiscordjsError) {
+        // nothing i need to report here
+      } else {
+        msgEmbed.addFields({
+          name: "Webhook",
+          value: "This message was sent from a webhook, but there was an error fetching its name.",
+        });
+      }
+    }
+  }
+
+  // attachments report
+  const attachments = messageDeleted.attachments;
+  const attachmentCount = attachments.size;
+  let attachmentFile = null;
+  if (attachmentCount > 0) {
+    let attachmentText = "";
+    attachments.forEach(({ name, contentType, size, proxyURL, url }, _id) => {
+      const fileName = truncateFileName(name);
+      const fileType = contentType ? contentType : "(unknown type)";
+      attachmentText += `_**${fileName}**_ - ${fileType} (${size}B) [(cdn link)](${url}) [(proxy link)](${proxyURL})\n`;
+    });
+    if (attachmentText.length > 1024) {
+      msgEmbed.addFields({
+        name: pluralize(attachmentCount, "attachment"),
+        value: "A list of attachment file names, types, and old links have been added above this report.",
+      });
+      attachmentFile = new AttachmentBuilder(Buffer.from(attachmentText), { name: "files.txt" });
+    } else {
+      msgEmbed.addFields({ name: "Contained " + pluralize(attachmentCount, "attachment"), value: attachmentText });
+    }
+  }
+
+  // embed report
+  const embedCount = messageDeleted.embeds.length;
+  if (embedCount > 0) {
+    const embedText =
+      embedCount > 5
+        ? "Appending the first 5 to the end of this report."
+        : `${embedCount == 1 ? "It" : "They"} will be appended to the end of this report.`;
+    msgEmbed.addFields({ name: "Included " + pluralize(embedCount, "embed"), value: embedText });
+  }
+
+  return logChannel.send({
+    content: "\t",
+    embeds: [...[msgEmbed], ...messageDeleted.embeds.slice(0, 5)],
+    ...(attachmentFile && { files: [attachmentFile] }),
+  });
 };
