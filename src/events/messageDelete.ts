@@ -236,10 +236,10 @@ module.exports = async (client: Client, messageDeleted: Message) => {
       text: "Deleted message was originally sent",
     })
     .setThumbnail(
-      `${messageDeleted.author.displayAvatarURL({
+      messageDeleted.author.displayAvatarURL({
         extension: "png",
         size: 128,
-      })}`
+      })
     )
     .addFields({ name: "===== Message Report =====", value: reportText });
 
