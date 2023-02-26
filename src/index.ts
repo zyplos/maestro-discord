@@ -12,6 +12,7 @@ declare global {
       DISCORD_APP_ID: string;
       DISCORD_PUBLIC_KEY: string;
       DISCORD_BOT_TOKEN: string;
+      DISCORD_BOT_ID: string;
 
       OWNER_ID: string;
       DEV_GUILD_ID: string;

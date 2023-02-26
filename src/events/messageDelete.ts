@@ -38,6 +38,7 @@ function parseAuditLogEntry(
 }
 
 module.exports = async (client: Client, messageDeleted: Message) => {
+  if (messageDeleted.author.id == process.env.DISCORD_BOT_ID) return; // stuff from our bot shouldn't be logged
   // don't care about messages not in guilds
   if (!messageDeleted.guild) return;
 
