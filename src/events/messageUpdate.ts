@@ -6,6 +6,7 @@ import {
   Client,
   EmbedBuilder,
   escapeCodeBlock,
+  escapeMarkdown,
   Message,
 } from "discord.js";
 import { diff as objectDiff } from "deep-object-diff";
@@ -110,7 +111,7 @@ module.exports = async (client: Client, oldMessage: Message, newMessage: Message
     attachmentsDiff.forEach(({ name, contentType, size, proxyURL, url }, _id) => {
       const fileName = truncateFileName(name);
       const fileType = contentType ? contentType : "(unknown type)";
-      attachmentDiffReport += `_**${fileName}**_ - ${fileType} (${size}B) [(cdn link)](${url}) [(proxy link)](${proxyURL})\n`;
+      attachmentDiffReport += `_**${escapeMarkdown(fileName)}**_ - ${fileType} (${size}B) [(cdn link)](${url}) [(proxy link)](${proxyURL})\n`;
     });
     if (attachmentDiffReport.length > 1024) {
       msgEmbed.addFields({
