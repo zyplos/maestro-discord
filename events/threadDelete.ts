@@ -1,9 +1,9 @@
 import {
   AuditLogEvent,
-  Client,
+  type Client,
   EmbedBuilder,
-  GuildAuditLogsEntry,
-  ThreadChannel,
+  type GuildAuditLogsEntry,
+  type ThreadChannel,
 } from "discord.js";
 import { getGuildLogChannel } from "../internals/util";
 
@@ -23,8 +23,8 @@ function parseAuditLogEntry(
   return executorString;
 }
 
-module.exports = async (_client: Client, thread: ThreadChannel) => {
-  const logChannel = await getGuildLogChannel(_client, thread.guild.id);
+module.exports = async (client: Client, thread: ThreadChannel) => {
+  const logChannel = await getGuildLogChannel(client, thread.guild.id);
   if (!logChannel) return; // guild hasn't set up their log channel
 
   console.log("thread", thread);
@@ -47,7 +47,7 @@ module.exports = async (_client: Client, thread: ThreadChannel) => {
     reportText +=
       "Couldn't get the server's Audit Log to get extra info. Please make sure I have the \"View Audit Log\" permission.\n";
   } else {
-    reportText += auditLogData ? auditLogData + "\n" : "";
+    reportText += auditLogData ? `${auditLogData}\n` : "";
   }
 
   const msgEmbed = new EmbedBuilder()

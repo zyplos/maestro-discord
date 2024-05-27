@@ -33,6 +33,8 @@
   "trustedDependencies": ["@biomejs/biome"],
   "scripts": {
     "start": "bun index.ts",
-    "dev": "bun index.ts --watch"
+    "dev": "bun index.ts --watch",
+    "format": "biome format --write ./",
+    "lint": "biome lint ./"
   }
 }

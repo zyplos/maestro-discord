@@ -1,7 +1,7 @@
-import { ChannelType, Client } from "discord.js";
+import { ChannelType, type Client } from "discord.js";
 // import { getGuildSettings } from "./database";
 
-export async function getGuildLogChannel(client: Client, _guildId: string) {
+export async function getGuildLogChannel(client: Client, guildId: string) {
   // const { logChannelId } = getGuildSettings(guildId);
   const logChannelId = process.env.DEV_CHANNEL_ID;
 
@@ -18,7 +18,7 @@ export async function getGuildLogChannel(client: Client, _guildId: string) {
   }
 
   // guild set log channel to an invalid channel type
-  if (logChannel.type != ChannelType.GuildText || !logChannel.isTextBased()) {
+  if (logChannel.type !== ChannelType.GuildText || !logChannel.isTextBased()) {
     client.logger.error(
       `Somehow, someone set up a log channel that isn't a text channel. ${logChannel.guild.name} ${logChannel.guild.id} | ${logChannel.name} ${logChannelId} | ${logChannel.type}`
     );
@@ -46,12 +46,12 @@ export function truncateFileName(fileName: string | null): string {
   const extIndex = fileName.lastIndexOf(".");
 
   // file has no extension
-  if (extIndex == -1) {
+  if (extIndex === -1) {
     if (fileName.length >= maxLength) {
-      return fileName.substring(maxLength) + " (truncated)";
-    } else {
-      return fileName;
+      return `${fileName.substring(maxLength)} (truncated)`;
     }
+
+    return fileName;
   }
 
   const name = fileName.substring(0, extIndex);
@@ -59,8 +59,8 @@ export function truncateFileName(fileName: string | null): string {
 
   // no truncation needed
   if (fileName.length <= maxLength) {
-    return name + "." + extension;
-  } else {
-    return name.substring(0, maxLength) + "." + extension + " (truncated)";
+    return `${name}.${extension}`;
   }
+
+  return `${name.substring(0, maxLength)}.${extension} (truncated)`;
 }

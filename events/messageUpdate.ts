@@ -3,11 +3,12 @@ import {
   AttachmentBuilder,
   ButtonBuilder,
   ButtonStyle,
-  Client,
+  type Client,
   EmbedBuilder,
   escapeCodeBlock,
   escapeMarkdown,
-  Message,
+  type Message,
+  type Embed,
 } from "discord.js";
 import { diff as objectDiff } from "deep-object-diff";
 import * as textDiff from "diff";
@@ -23,14 +24,14 @@ module.exports = async (
   oldMessage: Message,
   newMessage: Message
 ) => {
-  if (oldMessage.author.id == process.env.DISCORD_BOT_ID) return; // stuff from our bot shouldn't be logged
+  if (oldMessage.author.id === process.env.DISCORD_BOT_ID) return; // stuff from our bot shouldn't be logged
   if (!newMessage.inGuild()) return; // don't care about DM messages
 
   const logChannel = await getGuildLogChannel(client, newMessage.guild.id);
   if (!logChannel) return; // guild hasn't set up their log channel
 
   let textDiffReport = "";
-  let files = [];
+  const files = [];
 
   //
   // =====
@@ -41,33 +42,37 @@ module.exports = async (
 
   const isOldBlank = isStringBlank(oldMessage.content);
   const isNewBlank = isStringBlank(newMessage.content);
-  if (oldMessage.content == newMessage.content) {
+  if (oldMessage.content === newMessage.content) {
     textDiffReport = "(messages were the same)";
   } else if (isOldBlank || isNewBlank) {
     if (isOldBlank) textDiffReport += "(old message was blank)";
     textDiffReport += oldMessage.content
-      ? "```\n" + escapeCodeBlock(oldMessage.content) + "\n```"
+      ? `\`\`\`\n${escapeCodeBlock(oldMessage.content)}\n\`\`\``
       : "";
     textDiffReport += "\n\n";
     if (isNewBlank) textDiffReport += "(new message was blank)";
     textDiffReport += newMessage.content
-      ? "```\n" + escapeCodeBlock(newMessage.content) + "\n```"
+      ? `\`\`\`\n${escapeCodeBlock(newMessage.content)}\n\`\`\``
       : "";
   } else {
     const oldText = escapeCodeBlock(oldMessage.content || "");
     const newText = escapeCodeBlock(newMessage.content || "");
 
-    let diff = textDiff.diffWordsWithSpace(oldText, newText);
+    const diff = textDiff.diffWordsWithSpace(oldText, newText);
 
     textDiffReport = "```ansi\n";
 
-    diff.forEach((part) => {
-      if (!part.added && !part.removed) textDiffReport += part.value;
-      if (part.added)
+    for (const part of diff) {
+      if (!part.added && !part.removed) {
+        textDiffReport += part.value;
+      }
+      if (part.added) {
         textDiffReport += `🟩\u001b[1;32m${part.value}\u001b[0m🟩`;
-      if (part.removed)
+      }
+      if (part.removed) {
         textDiffReport += `🟥\u001b[1;31m${part.value}\u001b[0m🟥`;
-    });
+      }
+    }
 
     textDiffReport += "\n```";
   }
@@ -119,7 +124,7 @@ module.exports = async (
       })
     );
 
-  let embeds: any = [msgEmbed]; // i know this works
+  let embeds: (Embed | EmbedBuilder)[] = [msgEmbed];
 
   //
   // =====
@@ -157,7 +162,7 @@ module.exports = async (
       files.push(attachmentReportFileAttachment);
     } else {
       msgEmbed.addFields({
-        name: "Removed " + pluralize(attachmentCount, "attachment"),
+        name: `Removed ${pluralize(attachmentCount, "attachment")}`,
         value: attachmentDiffReport,
       });
     }
@@ -177,14 +182,14 @@ module.exports = async (
     let embedText =
       embedCount > 9
         ? "Appending the first 9 embeds from the old message to the end of this report."
-        : `The embeds from the old message will be appended to the end of this report.`;
+        : "The embeds from the old message will be appended to the end of this report.";
 
     // embeds were added
     if (
       newMessage.embeds.length > oldMessage.embeds.length &&
-      oldMessage.embeds.length == 0
+      oldMessage.embeds.length === 0
     ) {
-      if (embedCount == 0)
+      if (embedCount === 0)
         embedText =
           "The new message added embeds. Jump to the message to see them.";
     }

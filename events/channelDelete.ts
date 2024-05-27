@@ -6,6 +6,7 @@ import {
   escapeMarkdown,
   type GuildAuditLogsEntry,
   type NonThreadGuildBasedChannel,
+  ChannelType,
 } from "discord.js";
 import { getGuildLogChannel } from "../internals/util";
 
@@ -26,27 +27,28 @@ function parseAuditLogEntry(
 }
 
 const channelTypes = {
-  0: "Text Channel",
-  1: "DM Channel",
-  2: "Voice Channel",
-  3: "Group DM",
-  4: "Channel Category",
-  5: "Announcement Channel",
-  10: "Thread in Announcement Channel",
-  11: "Thread",
-  12: "Private Thread",
-  13: "Stage Channel",
-  14: "Hub Directory",
-  15: "Forum",
+  [ChannelType.GuildText]: "Text Channel",
+  [ChannelType.DM]: "DM Channel",
+  [ChannelType.GuildVoice]: "Voice Channel",
+  [ChannelType.GroupDM]: "Group DM",
+  [ChannelType.GuildCategory]: "Channel Category",
+  [ChannelType.GuildAnnouncement]: "Announcement Channel",
+  [ChannelType.AnnouncementThread]: "Thread in Announcement Channel",
+  [ChannelType.PublicThread]: "Thread",
+  [ChannelType.PrivateThread]: "Private Thread",
+  [ChannelType.GuildStageVoice]: "Stage Channel",
+  [ChannelType.GuildDirectory]: "Hub Directory",
+  [ChannelType.GuildForum]: "Forum",
+  [ChannelType.GuildMedia]: "Media Channel",
 };
 
 module.exports = async (
-  _client: Client,
+  client: Client,
   channel: DMChannel | NonThreadGuildBasedChannel
 ) => {
   if (channel.isDMBased()) return; // don't care about DMs
 
-  const logChannel = await getGuildLogChannel(_client, channel.guild.id);
+  const logChannel = await getGuildLogChannel(client, channel.guild.id);
   if (!logChannel) return; // guild hasn't set up their log channel
 
   console.log("channel", channel);
@@ -69,7 +71,7 @@ module.exports = async (
     reportText +=
       "Couldn't get the server's Audit Log to get extra info. Please make sure I have the \"View Audit Log\" permission.\n";
   } else {
-    reportText += auditLogData ? auditLogData + "\n" : "";
+    reportText += auditLogData ? `${auditLogData}\n` : "";
   }
 
   const channelType = channelTypes[channel.type] || "";

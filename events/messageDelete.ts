@@ -1,9 +1,9 @@
 import {
-  Client,
-  Message,
+  type Client,
+  type Message,
   EmbedBuilder,
   AuditLogEvent,
-  GuildAuditLogsEntry,
+  type GuildAuditLogsEntry,
   escapeMarkdown,
   MessageType,
   DiscordjsError,
@@ -31,11 +31,11 @@ function parseAuditLogEntry(
   const targetString = `👤 Sent by ${target} (${target.tag} ${target.id})`;
 
   if (!authorId) {
-    if (extra.channel && extra.channel.id == channelId) {
+    if (extra.channel && extra.channel.id === channelId) {
       return { executorString, targetString };
-    } else {
-      return null;
     }
+
+    return null;
   }
 
   if (target.id !== authorId) return null;
@@ -43,7 +43,7 @@ function parseAuditLogEntry(
 }
 
 module.exports = async (client: Client, messageDeleted: Message) => {
-  if (messageDeleted.author?.id == process.env.DISCORD_BOT_ID) return; // stuff from our bot shouldn't be logged
+  if (messageDeleted.author?.id === process.env.DISCORD_BOT_ID) return; // stuff from our bot shouldn't be logged
   // don't care about messages not in guilds
   if (!messageDeleted.guild) return;
 
@@ -85,8 +85,8 @@ module.exports = async (client: Client, messageDeleted: Message) => {
     if (auditLogData) {
       auditLogString +=
         "Server Audit Log's last detected deleted message in that channel:\n";
-      auditLogString += auditLogData.targetString + "\n";
-      auditLogString += auditLogData.executorString + "\n";
+      auditLogString += `${auditLogData.targetString}\n`;
+      auditLogString += `${auditLogData.executorString}\n`;
     }
     if (auditLogFailed) {
       auditLogString +=
@@ -107,7 +107,7 @@ module.exports = async (client: Client, messageDeleted: Message) => {
     return logChannel.send({ content: "\t", embeds: [msgEmbed] });
   }
 
-  let formattedText;
+  let formattedText: string;
   if (isStringBlank(messageDeleted.content)) {
     formattedText = "(this message was empty)";
   } else {
@@ -125,7 +125,7 @@ module.exports = async (client: Client, messageDeleted: Message) => {
     reportText +=
       "Couldn't get the server's Audit Log to get extra info. Please make sure I have the \"View Audit Log\" permission.\n";
   } else {
-    reportText += auditLogData ? auditLogData.executorString + "\n" : "";
+    reportText += auditLogData ? `${auditLogData.executorString}\n` : "";
   }
 
   // flags
@@ -316,12 +316,13 @@ module.exports = async (client: Client, messageDeleted: Message) => {
         value:
           "A list of attachment file names, types, and old links have been added above this report.",
       });
+
       attachmentFile = new AttachmentBuilder(Buffer.from(attachmentText), {
         name: "files.txt",
       });
     } else {
       msgEmbed.addFields({
-        name: "Contained " + pluralize(attachmentCount, "attachment"),
+        name: `Contained ${pluralize(attachmentCount, "attachment")}`,
         value: attachmentText,
       });
     }
@@ -334,10 +335,11 @@ module.exports = async (client: Client, messageDeleted: Message) => {
       embedCount > 5
         ? "Appending the first 5 to the end of this report."
         : `${
-            embedCount == 1 ? "It" : "They"
+            embedCount === 1 ? "It" : "They"
           } will be appended to the end of this report.`;
+
     msgEmbed.addFields({
-      name: "Included " + pluralize(embedCount, "embed"),
+      name: `Included ${pluralize(embedCount, "embed")}`,
       value: embedText,
     });
   }

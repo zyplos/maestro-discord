@@ -1,4 +1,4 @@
-import { Client, EmbedBuilder, GuildBan } from "discord.js";
+import { type Client, EmbedBuilder, type GuildBan } from "discord.js";
 import { getGuildLogChannel } from "../internals/util";
 
 module.exports = async (client: Client, ban: GuildBan) => {
