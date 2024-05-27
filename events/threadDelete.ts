@@ -1,4 +1,10 @@
-import { AuditLogEvent, Client, EmbedBuilder, GuildAuditLogsEntry, ThreadChannel } from "discord.js";
+import {
+  AuditLogEvent,
+  Client,
+  EmbedBuilder,
+  GuildAuditLogsEntry,
+  ThreadChannel,
+} from "discord.js";
 import { getGuildLogChannel } from "../internals/util";
 
 function parseAuditLogEntry(
@@ -46,7 +52,9 @@ module.exports = async (_client: Client, thread: ThreadChannel) => {
 
   const msgEmbed = new EmbedBuilder()
     .setTitle("Thread Deleted")
-    .setDescription(`**💬\#${thread.name} (${thread.id})** was deleted.\n${reportText}`)
+    .setDescription(
+      `**💬\#${thread.name} (${thread.id})** was deleted.\n${reportText}`
+    )
     .setColor(0xce5858)
     .setTimestamp(new Date());
 

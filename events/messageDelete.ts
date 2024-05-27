@@ -9,7 +9,12 @@ import {
   DiscordjsError,
   AttachmentBuilder,
 } from "discord.js";
-import { getGuildLogChannel, isStringBlank, pluralize, truncateFileName } from "../internals/util";
+import {
+  getGuildLogChannel,
+  isStringBlank,
+  pluralize,
+  truncateFileName,
+} from "../internals/util";
 
 function parseAuditLogEntry(
   deletionLog: GuildAuditLogsEntry<AuditLogEvent.MessageDelete> | undefined,
@@ -55,21 +60,31 @@ module.exports = async (client: Client, messageDeleted: Message) => {
       type: AuditLogEvent.MessageDelete,
     });
     const deletionLog = fetchedLogs.entries.first();
-    auditLogData = parseAuditLogEntry(deletionLog, messageDeleted.author?.id, messageDeleted.channelId);
+    auditLogData = parseAuditLogEntry(
+      deletionLog,
+      messageDeleted.author?.id,
+      messageDeleted.channelId
+    );
   } catch (error) {
     auditLogFailed = true;
   }
 
   const messageChannel = messageDeleted.channel;
-  const channelName = messageChannel.isTextBased() && !messageChannel.isDMBased() && messageChannel.name;
+  const channelName =
+    messageChannel.isTextBased() &&
+    !messageChannel.isDMBased() &&
+    messageChannel.name;
   const isThreadChannel = messageChannel.isThread();
-  const channelNameFormatted = channelName ? `(${(isThreadChannel && "💬") || ""}#${channelName})` : "";
+  const channelNameFormatted = channelName
+    ? `(${(isThreadChannel && "💬") || ""}#${channelName})`
+    : "";
   const channelString = `${messageChannel} ${channelNameFormatted}`;
 
   if (messageDeleted.partial) {
     let auditLogString = "";
     if (auditLogData) {
-      auditLogString += "Server Audit Log's last detected deleted message in that channel:\n";
+      auditLogString +=
+        "Server Audit Log's last detected deleted message in that channel:\n";
       auditLogString += auditLogData.targetString + "\n";
       auditLogString += auditLogData.executorString + "\n";
     }
@@ -115,10 +130,16 @@ module.exports = async (client: Client, messageDeleted: Message) => {
 
   // flags
   const messageFlags = messageDeleted.flags.serialize();
-  if (messageFlags.Crossposted) reportText += "This message was published to servers following this channel.\n";
-  if (messageFlags.IsCrosspost) reportText += "This message was sent from a followed channel.\n";
-  if (messageFlags.Urgent) reportText += "This message was an official message from Discord.\n";
-  if (messageFlags.Loading) reportText += "This was an interaction from a bot that didn't finish responding.\n";
+  if (messageFlags.Crossposted)
+    reportText +=
+      "This message was published to servers following this channel.\n";
+  if (messageFlags.IsCrosspost)
+    reportText += "This message was sent from a followed channel.\n";
+  if (messageFlags.Urgent)
+    reportText += "This message was an official message from Discord.\n";
+  if (messageFlags.Loading)
+    reportText +=
+      "This was an interaction from a bot that didn't finish responding.\n";
 
   // activity
   if (messageDeleted.activity) {
@@ -181,13 +202,16 @@ module.exports = async (client: Client, messageDeleted: Message) => {
         reportText += "This message is a bot's response to a chat command.";
         break;
       case MessageType.ContextMenuCommand:
-        reportText += "This message is a bot's response to a context menu command.";
+        reportText +=
+          "This message is a bot's response to a context menu command.";
         break;
       case MessageType.AutoModerationAction:
-        reportText += ":no_entry_sign: **This was an AutoMod notification that flagged this user's message.**";
+        reportText +=
+          ":no_entry_sign: **This was an AutoMod notification that flagged this user's message.**";
         break;
       case MessageType.RoleSubscriptionPurchase:
-        reportText += "This message was a role subscription purchase notification.";
+        reportText +=
+          "This message was a role subscription purchase notification.";
         break;
       case MessageType.StageStart:
         reportText += "This message was stage start system notification.";
@@ -244,7 +268,10 @@ module.exports = async (client: Client, messageDeleted: Message) => {
         value: `This was the start of the ${thread} (${thread.name} [${thread.id}]) thread.`,
       });
     } else {
-      msgEmbed.addFields({ name: "Thread", value: "This was the start of a thread." });
+      msgEmbed.addFields({
+        name: "Thread",
+        value: "This was the start of a thread.",
+      });
     }
   }
 
@@ -255,7 +282,9 @@ module.exports = async (client: Client, messageDeleted: Message) => {
       const webhookReference = await messageDeleted.fetchWebhook();
       msgEmbed.addFields({
         name: "Webhook",
-        value: `This message was sent by the **${escapeMarkdown(webhookReference.name)} (${isFromAWebhook})** webhook.`,
+        value: `This message was sent by the **${escapeMarkdown(
+          webhookReference.name
+        )} (${isFromAWebhook})** webhook.`,
       });
     } catch (error) {
       if (error instanceof DiscordjsError) {
@@ -263,7 +292,8 @@ module.exports = async (client: Client, messageDeleted: Message) => {
       } else {
         msgEmbed.addFields({
           name: "Webhook",
-          value: "This message was sent from a webhook, but there was an error fetching its name.",
+          value:
+            "This message was sent from a webhook, but there was an error fetching its name.",
         });
       }
     }
@@ -283,11 +313,17 @@ module.exports = async (client: Client, messageDeleted: Message) => {
     if (attachmentText.length > 1024) {
       msgEmbed.addFields({
         name: pluralize(attachmentCount, "attachment"),
-        value: "A list of attachment file names, types, and old links have been added above this report.",
+        value:
+          "A list of attachment file names, types, and old links have been added above this report.",
       });
-      attachmentFile = new AttachmentBuilder(Buffer.from(attachmentText), { name: "files.txt" });
+      attachmentFile = new AttachmentBuilder(Buffer.from(attachmentText), {
+        name: "files.txt",
+      });
     } else {
-      msgEmbed.addFields({ name: "Contained " + pluralize(attachmentCount, "attachment"), value: attachmentText });
+      msgEmbed.addFields({
+        name: "Contained " + pluralize(attachmentCount, "attachment"),
+        value: attachmentText,
+      });
     }
   }
 
@@ -297,8 +333,13 @@ module.exports = async (client: Client, messageDeleted: Message) => {
     const embedText =
       embedCount > 5
         ? "Appending the first 5 to the end of this report."
-        : `${embedCount == 1 ? "It" : "They"} will be appended to the end of this report.`;
-    msgEmbed.addFields({ name: "Included " + pluralize(embedCount, "embed"), value: embedText });
+        : `${
+            embedCount == 1 ? "It" : "They"
+          } will be appended to the end of this report.`;
+    msgEmbed.addFields({
+      name: "Included " + pluralize(embedCount, "embed"),
+      value: embedText,
+    });
   }
 
   return logChannel.send({

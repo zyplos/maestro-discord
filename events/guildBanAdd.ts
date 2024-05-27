@@ -11,7 +11,9 @@ module.exports = async (client: Client, ban: GuildBan) => {
 
   const msgEmbed = new EmbedBuilder()
     .setTitle("Member Banned")
-    .setDescription(`**${ban.user.tag} (${ban.user.id})** was banned from the server.`)
+    .setDescription(
+      `**${ban.user.tag} (${ban.user.id})** was banned from the server.`
+    )
     .setColor(0x550707)
     .setTimestamp(new Date())
     .setThumbnail(

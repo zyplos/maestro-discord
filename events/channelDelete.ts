@@ -1,11 +1,11 @@
 import {
   AuditLogEvent,
-  Client,
-  DMChannel,
+  type Client,
+  type DMChannel,
   EmbedBuilder,
   escapeMarkdown,
-  GuildAuditLogsEntry,
-  NonThreadGuildBasedChannel,
+  type GuildAuditLogsEntry,
+  type NonThreadGuildBasedChannel,
 } from "discord.js";
 import { getGuildLogChannel } from "../internals/util";
 
@@ -40,7 +40,10 @@ const channelTypes = {
   15: "Forum",
 };
 
-module.exports = async (_client: Client, channel: DMChannel | NonThreadGuildBasedChannel) => {
+module.exports = async (
+  _client: Client,
+  channel: DMChannel | NonThreadGuildBasedChannel
+) => {
   if (channel.isDMBased()) return; // don't care about DMs
 
   const logChannel = await getGuildLogChannel(_client, channel.guild.id);
@@ -73,7 +76,11 @@ module.exports = async (_client: Client, channel: DMChannel | NonThreadGuildBase
 
   const msgEmbed = new EmbedBuilder()
     .setTitle("Channel Deleted")
-    .setDescription(`${channelType} **${escapeMarkdown(channel.name)} (${channel.id})** was deleted.\n${reportText}`)
+    .setDescription(
+      `${channelType} **${escapeMarkdown(channel.name)} (${
+        channel.id
+      })** was deleted.\n${reportText}`
+    )
     .setColor(0xff0000)
     .setTimestamp(new Date());
 
