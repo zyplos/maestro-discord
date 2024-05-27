@@ -1,4 +1,8 @@
-import { SlashCommand, SlashCreator, CommandContext } from "slash-create";
+import {
+  SlashCommand,
+  type SlashCreator,
+  type CommandContext,
+} from "slash-create";
 
 export default class PingCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
@@ -10,7 +14,14 @@ export default class PingCommand extends SlashCommand {
   }
 
   async run(_ctx: CommandContext) {
-    const derpspace = ["I'm online.", "Hm?", "Hello.", "Sentient and waiting.", "I'm here.", "*zzz..."];
+    const derpspace = [
+      "I'm online.",
+      "Hm?",
+      "Hello.",
+      "Sentient and waiting.",
+      "I'm here.",
+      "*zzz...",
+    ];
     const derpindex = Math.floor(Math.random() * derpspace.length);
 
     return {

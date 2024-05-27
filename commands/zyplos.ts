@@ -1,4 +1,8 @@
-import { SlashCommand, SlashCreator, CommandContext } from "slash-create";
+import {
+  SlashCommand,
+  type SlashCreator,
+  type CommandContext,
+} from "slash-create";
 
 export default class ZyplosCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
@@ -11,7 +15,8 @@ export default class ZyplosCommand extends SlashCommand {
   }
 
   async run(_ctx: CommandContext) {
-    if (_ctx.user.id !== process.env.OWNER_ID) return { content: "nope sorry", ephemeral: true };
+    if (_ctx.user.id !== process.env.OWNER_ID)
+      return { content: "nope sorry", ephemeral: true };
 
     // const guild = await this.client.guilds.fetch(process.env.DEV_GUILD_ID);
     // const member = await guild.members.fetch(process.env.OWNER_ID);
