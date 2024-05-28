@@ -35,6 +35,7 @@
     "start": "bun index.ts",
     "dev": "bun index.ts --watch",
     "format": "biome format --write ./",
-    "lint": "biome lint ./"
+    "lint": "biome lint ./",
+    "database-init": "bun ./scripts/createDatabase.ts"
   }
 }
