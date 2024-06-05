@@ -2,6 +2,7 @@ import {
   SlashCommand,
   type SlashCreator,
   type CommandContext,
+  InteractionContextType,
 } from "slash-create";
 
 export default class PingCommand extends SlashCommand {
@@ -9,12 +10,12 @@ export default class PingCommand extends SlashCommand {
     super(creator, {
       name: "ping",
       description: "Check if I'm paying attention.",
-      dmPermission: false,
+      contexts: [InteractionContextType.GUILD],
     });
   }
 
   async debugRun(ctx: CommandContext) {
-    return { content: "nope sorry", ephemeral: true };
+    return { content: "wow", ephemeral: true };
   }
 
   async run(ctx: CommandContext) {
