@@ -9,6 +9,7 @@ import { GatewayServer, SlashCreator } from "slash-create";
 import { join, extname, basename } from "node:path";
 import { readdir } from "node:fs/promises";
 import CatLoggr from "cat-loggr/ts";
+import DatabaseManager from "./internals/database";
 
 // declare our process.env stuff for Typescript to know about
 declare global {
@@ -60,6 +61,14 @@ declare module "discord.js" {
   }
 }
 client.logger = logger;
+
+// Create DatabaseManager instance
+declare module "discord.js" {
+  interface Client {
+    db: DatabaseManager;
+  }
+}
+client.db = new DatabaseManager();
 
 // Load events for the discord.js client from the ./events folder
 // Files from the ./events folder should be named with the event name discord.js looks for (https://discord.js.org/#/docs/discord.js/stable/class/Client)
@@ -121,3 +130,11 @@ await creator.syncCommands();
 
 // Start the client
 client.login(process.env.DISCORD_BOT_TOKEN);
+
+// on process shutdown, close the database connection
+process.on("SIGINT", () => {
+  client.logger.info("Shutting down...");
+  client.destroy();
+  client.db.close();
+  process.exit(0);
+});
