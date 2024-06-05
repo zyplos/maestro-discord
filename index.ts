@@ -86,7 +86,8 @@ for (const filePath of filePaths) {
   const eventName = basename(fileName, fileExtention);
 
   logger.debug(`Loading event file: ${fileName}`);
-  const event = require(join(__dirname, "events", filePath));
+  const importedModule = require(join(__dirname, "events", filePath));
+  const event = importedModule.default || importedModule;
   client.on(eventName, event.bind(null, client));
 }
 

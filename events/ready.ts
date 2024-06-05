@@ -1,5 +1,5 @@
 import type { Client } from "discord.js";
 
-module.exports = async (client: Client) => {
+export default function (client: Client) {
   client.logger.info(`${client.user?.tag} logged in!`);
-};
+}

@@ -42,10 +42,10 @@ const channelTypes = {
   [ChannelType.GuildMedia]: "Media Channel",
 };
 
-module.exports = async (
+export default async function (
   client: Client,
   channel: DMChannel | NonThreadGuildBasedChannel
-) => {
+) {
   if (channel.isDMBased()) return; // don't care about DMs
 
   const logChannel = await getServerLogChannel(client, channel.guild.id);
@@ -90,4 +90,4 @@ module.exports = async (
     content: "\t",
     embeds: [msgEmbed],
   });
-};
+}

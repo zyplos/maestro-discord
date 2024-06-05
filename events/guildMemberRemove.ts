@@ -1,7 +1,7 @@
 import { type Client, type GuildMember, EmbedBuilder } from "discord.js";
 import { getServerLogChannel } from "../internals/util";
 
-module.exports = async (client: Client, member: GuildMember) => {
+export default async function (client: Client, member: GuildMember) {
   client.logger.debug(`${member.user.tag} left ${member.guild.name}`);
 
   const logChannel = await getServerLogChannel(client, member.guild.id);
@@ -22,4 +22,4 @@ module.exports = async (client: Client, member: GuildMember) => {
     );
 
   logChannel.send({ content: "\t", embeds: [msgEmbed] });
-};
+}

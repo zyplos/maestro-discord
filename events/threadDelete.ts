@@ -23,7 +23,7 @@ function parseAuditLogEntry(
   return executorString;
 }
 
-module.exports = async (client: Client, thread: ThreadChannel) => {
+export default async function (client: Client, thread: ThreadChannel) {
   const logChannel = await getServerLogChannel(client, thread.guild.id);
   if (!logChannel) return; // guild hasn't set up their log channel
 
@@ -62,4 +62,4 @@ module.exports = async (client: Client, thread: ThreadChannel) => {
     content: "\t",
     embeds: [msgEmbed],
   });
-};
+}

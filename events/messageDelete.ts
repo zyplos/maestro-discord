@@ -42,7 +42,7 @@ function parseAuditLogEntry(
   return { executorString, targetString };
 }
 
-module.exports = async (client: Client, messageDeleted: Message) => {
+export default async function (client: Client, messageDeleted: Message) {
   if (messageDeleted.author?.id === process.env.DISCORD_BOT_ID) return; // stuff from our bot shouldn't be logged
   // don't care about messages not in guilds
   if (!messageDeleted.guild) return;
@@ -349,4 +349,4 @@ module.exports = async (client: Client, messageDeleted: Message) => {
     embeds: [...[msgEmbed], ...messageDeleted.embeds.slice(0, 5)],
     ...(attachmentFile && { files: [attachmentFile] }),
   });
-};
+}

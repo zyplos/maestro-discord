@@ -1,10 +1,10 @@
 import type { Client, Collection, Message, Snowflake } from "discord.js";
 const messageDelete = require("./messageDelete");
 
-module.exports = async (
+export default async function (
   client: Client,
   bulkMessages: Collection<Snowflake, Message>
-) => {
+) {
   // console.log("messageDeleteBulk", bulkMessages);
   // console.log("====");
 
@@ -12,4 +12,4 @@ module.exports = async (
     // console.log(deletedMessage);
     await messageDelete(client, deletedMessage);
   }
-};
+}

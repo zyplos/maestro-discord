@@ -1,8 +1,8 @@
 import { type Client, EmbedBuilder, type GuildBan } from "discord.js";
 import { getServerLogChannel } from "../internals/util";
 
-module.exports = async (client: Client, ban: GuildBan) => {
-  client.logger.debug(`${ban.user.tag} was banned from ${ban.guild.name}`);
+export default async function (client: Client, ban: GuildBan) {
+  client.logger.debug(`${ban.user.tag} was unbanned from ${ban.guild.name}`);
 
   const logChannel = await getServerLogChannel(client, ban.guild.id);
   if (!logChannel) return; // guild hasn't set up their log channel
@@ -28,4 +28,4 @@ module.exports = async (client: Client, ban: GuildBan) => {
   }
 
   logChannel.send({ content: "\t", embeds: [msgEmbed] });
-};
+}

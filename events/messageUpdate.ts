@@ -19,11 +19,11 @@ import {
   truncateFileName,
 } from "../internals/util";
 
-module.exports = async (
+export default async function (
   client: Client,
   oldMessage: Message,
   newMessage: Message
-) => {
+) {
   if (oldMessage.author.id === process.env.DISCORD_BOT_ID) return; // stuff from our bot shouldn't be logged
   if (!newMessage.inGuild()) return; // don't care about DM messages
 
@@ -226,4 +226,4 @@ module.exports = async (
     components: [componentsRow],
     files,
   });
-};
+}
