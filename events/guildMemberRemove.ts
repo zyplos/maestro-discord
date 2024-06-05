@@ -1,10 +1,10 @@
 import { type Client, type GuildMember, EmbedBuilder } from "discord.js";
-import { getGuildLogChannel } from "../internals/util";
+import { getServerLogChannel } from "../internals/util";
 
 module.exports = async (client: Client, member: GuildMember) => {
   client.logger.debug(`${member.user.tag} left ${member.guild.name}`);
 
-  const logChannel = await getGuildLogChannel(client, member.guild.id);
+  const logChannel = await getServerLogChannel(client, member.guild.id);
   if (!logChannel) return; // guild hasn't set up their log channel
 
   const msgEmbed = new EmbedBuilder()

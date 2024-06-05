@@ -10,7 +10,7 @@ import {
   AttachmentBuilder,
 } from "discord.js";
 import {
-  getGuildLogChannel,
+  getServerLogChannel,
   isStringBlank,
   pluralize,
   truncateFileName,
@@ -47,7 +47,7 @@ module.exports = async (client: Client, messageDeleted: Message) => {
   // don't care about messages not in guilds
   if (!messageDeleted.guild) return;
 
-  const logChannel = await getGuildLogChannel(client, messageDeleted.guild.id);
+  const logChannel = await getServerLogChannel(client, messageDeleted.guild.id);
   if (!logChannel) return; // guild hasn't set up their log channel
 
   console.log("messageDeleted", messageDeleted);

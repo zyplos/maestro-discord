@@ -1,12 +1,13 @@
 import { ChannelType, type Client } from "discord.js";
-// import { getGuildSettings } from "./database";
 
-export async function getGuildLogChannel(client: Client, guildId: string) {
-  // const { logChannelId } = getGuildSettings(guildId);
-  const logChannelId = process.env.DEV_CHANNEL_ID;
+export async function getServerLogChannel(client: Client, serverId: string) {
+  const logChannelId = await client.db.getServerLogChannelId(serverId);
+
+  // guild hasn't set up their log channel
+  if (!logChannelId) return false;
 
   const logChannel = await client.channels.fetch(logChannelId);
-  // guild hasn't set up their log channel
+  // channel was deleted or the bot doesn't have access to it
   if (!logChannel) return false;
 
   // completely invalid channel type

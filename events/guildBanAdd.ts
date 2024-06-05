@@ -1,10 +1,10 @@
 import { type Client, EmbedBuilder, type GuildBan } from "discord.js";
-import { getGuildLogChannel } from "../internals/util";
+import { getServerLogChannel } from "../internals/util";
 
 module.exports = async (client: Client, ban: GuildBan) => {
   client.logger.debug(`${ban.user.tag} was banned from ${ban.guild.name}`);
 
-  const logChannel = await getGuildLogChannel(client, ban.guild.id);
+  const logChannel = await getServerLogChannel(client, ban.guild.id);
   if (!logChannel) return; // guild hasn't set up their log channel
 
   console.log("ban", ban);

@@ -13,7 +13,7 @@ import {
 import { diff as objectDiff } from "deep-object-diff";
 import * as textDiff from "diff";
 import {
-  getGuildLogChannel,
+  getServerLogChannel,
   isStringBlank,
   pluralize,
   truncateFileName,
@@ -27,7 +27,7 @@ module.exports = async (
   if (oldMessage.author.id === process.env.DISCORD_BOT_ID) return; // stuff from our bot shouldn't be logged
   if (!newMessage.inGuild()) return; // don't care about DM messages
 
-  const logChannel = await getGuildLogChannel(client, newMessage.guild.id);
+  const logChannel = await getServerLogChannel(client, newMessage.guild.id);
   if (!logChannel) return; // guild hasn't set up their log channel
 
   let textDiffReport = "";

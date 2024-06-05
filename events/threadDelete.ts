@@ -5,7 +5,7 @@ import {
   type GuildAuditLogsEntry,
   type ThreadChannel,
 } from "discord.js";
-import { getGuildLogChannel } from "../internals/util";
+import { getServerLogChannel } from "../internals/util";
 
 function parseAuditLogEntry(
   deletionLog: GuildAuditLogsEntry<AuditLogEvent.ThreadDelete> | undefined,
@@ -24,7 +24,7 @@ function parseAuditLogEntry(
 }
 
 module.exports = async (client: Client, thread: ThreadChannel) => {
-  const logChannel = await getGuildLogChannel(client, thread.guild.id);
+  const logChannel = await getServerLogChannel(client, thread.guild.id);
   if (!logChannel) return; // guild hasn't set up their log channel
 
   console.log("thread", thread);

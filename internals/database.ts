@@ -36,7 +36,7 @@ export default class DatabaseManager {
     return isConfigured === 1;
   }
 
-  getServerLogChannel(serverId: string) {
+  getServerLogChannelId(serverId: string) {
     const query = this.db.prepare(`
       SELECT log_channel FROM servers WHERE id = $id;
     `);

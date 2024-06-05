@@ -8,7 +8,7 @@ import {
   type NonThreadGuildBasedChannel,
   ChannelType,
 } from "discord.js";
-import { getGuildLogChannel } from "../internals/util";
+import { getServerLogChannel } from "../internals/util";
 
 function parseAuditLogEntry(
   deletionLog: GuildAuditLogsEntry<AuditLogEvent.ChannelDelete> | undefined,
@@ -48,7 +48,7 @@ module.exports = async (
 ) => {
   if (channel.isDMBased()) return; // don't care about DMs
 
-  const logChannel = await getGuildLogChannel(client, channel.guild.id);
+  const logChannel = await getServerLogChannel(client, channel.guild.id);
   if (!logChannel) return; // guild hasn't set up their log channel
 
   console.log("channel", channel);
