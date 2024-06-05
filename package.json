@@ -36,6 +36,7 @@
     "dev": "bun index.ts --watch",
     "format": "biome format --write ./",
     "lint": "biome lint ./",
+    "check": "tsc --noEmit",
     "database-init": "bun ./scripts/createDatabase.ts"
   }
 }
