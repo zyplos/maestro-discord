@@ -14,22 +14,23 @@ export default class PingCommand extends SlashCommand {
   }
 
   async run(_ctx: CommandContext) {
-    const derpspace = [
-      "I'm online.",
-      "Hm?",
-      "Hello.",
-      "Sentient and waiting.",
-      "I'm here.",
-      "*zzz...",
-    ];
-    const derpindex = Math.floor(Math.random() * derpspace.length);
+    // const derpspace = [
+    //   "I'm online.",
+    //   "Hm?",
+    //   "Hello.",
+    //   "Sentient and waiting.",
+    //   "I'm here.",
+    //   "*zzz...",
+    // ];
+    // const derpindex = Math.floor(Math.random() * derpspace.length);
 
     return {
       ephemeral: true,
       content: "\t",
       embeds: [
         {
-          description: derpspace[derpindex],
+          // description: derpspace[derpindex],
+          description: "...",
           color: 0x58d858,
           footer: {
             text: `${Math.round(this.client.ws.ping)}ms`,
