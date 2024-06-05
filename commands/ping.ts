@@ -13,23 +13,20 @@ export default class PingCommand extends SlashCommand {
     });
   }
 
-  async run(_ctx: CommandContext) {
-    // const derpspace = [
-    //   "I'm online.",
-    //   "Hm?",
-    //   "Hello.",
-    //   "Sentient and waiting.",
-    //   "I'm here.",
-    //   "*zzz...",
-    // ];
-    // const derpindex = Math.floor(Math.random() * derpspace.length);
+  async debugRun(ctx: CommandContext) {
+    return { content: "nope sorry", ephemeral: true };
+  }
+
+  async run(ctx: CommandContext) {
+    if (ctx.user.id === process.env.OWNER_ID) {
+      return this.debugRun(ctx);
+    }
 
     return {
       ephemeral: true,
       content: "\t",
       embeds: [
         {
-          // description: derpspace[derpindex],
           description: "...",
           color: 0x58d858,
           footer: {
