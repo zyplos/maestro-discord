@@ -1,5 +1,5 @@
 import type { Client } from "discord.js";
 
 export default function (client: Client, warning: string) {
-  client.logger.warn(`Client emitted a warning: ${warning}`);
+  client.logger.warn(warning, "Client emitted a warning");
 }

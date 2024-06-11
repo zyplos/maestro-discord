@@ -8,8 +8,8 @@ import {
 import { GatewayServer, SlashCreator } from "slash-create";
 import { join, extname, basename } from "node:path";
 import { readdir } from "node:fs/promises";
-import CatLoggr from "cat-loggr/ts";
 import DatabaseManager from "./internals/database";
+import pino, { type Logger } from "pino";
 
 // declare our process.env stuff for Typescript to know about
 declare global {
@@ -52,12 +52,30 @@ const client = new Client({
 });
 
 // Create our logger
-const logger = new CatLoggr().setLevel(
-  process.env.NODE_ENV === "production" ? "info" : "debug"
+// https://stackoverflow.com/a/75815609
+const transport = pino.transport({
+  targets: [
+    {
+      level: "debug",
+      target: "pino/file",
+      options: {
+        destination: "./output.log",
+      },
+    },
+    {
+      level: "debug",
+      target: "pino-pretty",
+      options: {},
+    },
+  ],
+});
+const logger = pino(
+  { level: process.env.NODE_ENV === "production" ? "info" : "debug" },
+  transport
 );
 declare module "discord.js" {
   interface Client {
-    logger: CatLoggr;
+    logger: Logger;
   }
 }
 client.logger = logger;
@@ -100,7 +118,7 @@ const creator = new SlashCreator({
 });
 
 // SlashCreator has its own events not tied to the discord.js client
-creator.on("debug", (message) => logger.log(message));
+creator.on("debug", (message) => logger.info(message));
 creator.on("warn", (message) => logger.warn(message));
 creator.on("error", (error) => logger.error(error));
 creator.on("synced", () => logger.info("Commands synced!"));
@@ -113,7 +131,7 @@ creator.on("commandRegister", (command) =>
   logger.info(`Registered command ${command.commandName}`)
 );
 creator.on("commandError", (command, error) =>
-  logger.error(`Command ${command.commandName}:`, error)
+  logger.error(error, `Error running command ${command.commandName}`)
 );
 
 // Let SlashCreator know we're using a Discord bot instead of a web server for our slash commands
