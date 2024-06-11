@@ -8,7 +8,7 @@ import {
   type NonThreadGuildBasedChannel,
   ChannelType,
 } from "discord.js";
-import { getServerLogChannel } from "../internals/util";
+import { channelTypes, getServerLogChannel } from "../internals/util";
 
 function parseAuditLogEntry(
   deletionLog: GuildAuditLogsEntry<AuditLogEvent.ChannelDelete> | undefined,
@@ -25,22 +25,6 @@ function parseAuditLogEntry(
 
   return executorString;
 }
-
-const channelTypes = {
-  [ChannelType.GuildText]: "Text Channel",
-  [ChannelType.DM]: "DM Channel",
-  [ChannelType.GuildVoice]: "Voice Channel",
-  [ChannelType.GroupDM]: "Group DM",
-  [ChannelType.GuildCategory]: "Channel Category",
-  [ChannelType.GuildAnnouncement]: "Announcement Channel",
-  [ChannelType.AnnouncementThread]: "Thread in Announcement Channel",
-  [ChannelType.PublicThread]: "Thread",
-  [ChannelType.PrivateThread]: "Private Thread",
-  [ChannelType.GuildStageVoice]: "Stage Channel",
-  [ChannelType.GuildDirectory]: "Hub Directory",
-  [ChannelType.GuildForum]: "Forum",
-  [ChannelType.GuildMedia]: "Media Channel",
-};
 
 export default async function (
   client: Client,

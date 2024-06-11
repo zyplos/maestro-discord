@@ -1,30 +1,56 @@
 import { ChannelType, type Client } from "discord.js";
 
+export const channelTypes = {
+  [ChannelType.GuildText]: "Text Channel",
+  [ChannelType.DM]: "DM Channel",
+  [ChannelType.GuildVoice]: "Voice Channel",
+  [ChannelType.GroupDM]: "Group DM",
+  [ChannelType.GuildCategory]: "Channel Category",
+  [ChannelType.GuildAnnouncement]: "Announcement Channel",
+  [ChannelType.AnnouncementThread]: "Thread in an Announcement Channel",
+  [ChannelType.PublicThread]: "Thread",
+  [ChannelType.PrivateThread]: "Private Thread",
+  [ChannelType.GuildStageVoice]: "Stage Channel",
+  [ChannelType.GuildDirectory]: "Hub Directory",
+  [ChannelType.GuildForum]: "Forum",
+  [ChannelType.GuildMedia]: "Media Channel",
+};
+
+export async function getTextChannel(client: Client, channelId: string) {
+  const channel = await client.channels.fetch(channelId);
+  // channel was deleted or the bot doesn't have access to it
+  if (!channel) {
+    throw new Error(
+      "I don't have access to view that channel (or it was just deleted)."
+    );
+  }
+
+  // completely invalid channel type
+  if (channel.isDMBased()) {
+    throw new Error(
+      `<#${channelId}> is a DM channel, not a server text channel.`
+    );
+  }
+
+  // guild set log channel to an invalid channel type
+  if (channel.type !== ChannelType.GuildText || !channel.isTextBased()) {
+    throw new Error(
+      `<#${channelId}> is a ${
+        channelTypes[channel.type]
+      }, not a server text channel.`
+    );
+  }
+
+  return channel;
+}
+
 export async function getServerLogChannel(client: Client, serverId: string) {
   const logChannelId = await client.db.getServerLogChannelId(serverId);
 
   // guild hasn't set up their log channel
   if (!logChannelId) return false;
 
-  const logChannel = await client.channels.fetch(logChannelId);
-  // channel was deleted or the bot doesn't have access to it
-  if (!logChannel) return false;
-
-  // completely invalid channel type
-  if (logChannel.isDMBased()) {
-    client.logger.error(
-      `Somehow, someone set up a log channel that's in their DMs?? ${logChannelId} | ${logChannel.type}`
-    );
-    return false;
-  }
-
-  // guild set log channel to an invalid channel type
-  if (logChannel.type !== ChannelType.GuildText || !logChannel.isTextBased()) {
-    client.logger.error(
-      `Somehow, someone set up a log channel that isn't a text channel. ${logChannel.guild.name} ${logChannel.guild.id} | ${logChannel.name} ${logChannelId} | ${logChannel.type}`
-    );
-    return false;
-  }
+  const logChannel = await getTextChannel(client, logChannelId);
 
   return logChannel;
 }
