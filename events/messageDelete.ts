@@ -19,12 +19,13 @@ import {
 function parseAuditLogEntry(
   deletionLog: GuildAuditLogsEntry<AuditLogEvent.MessageDelete> | undefined,
   authorId: string | null,
-  channelId: string
+  channelId: string,
+  client: Client
 ) {
   if (!deletionLog) return null;
 
   const { executor, target, extra } = deletionLog;
-  console.log("deletionLog", deletionLog);
+  client.logger.debug(deletionLog, "deletionLog");
 
   if (!executor) return null;
   const executorString = `🛡️ Deleted by ${executor} (${executor.tag} ${executor.id})\n`;
@@ -50,7 +51,7 @@ export default async function (client: Client, messageDeleted: Message) {
   const logChannel = await getServerLogChannel(client, messageDeleted.guild.id);
   if (!logChannel) return; // guild hasn't set up their log channel
 
-  console.log("messageDeleted", messageDeleted);
+  client.logger.debug(messageDeleted, "messageDeleted");
 
   let auditLogData = null;
   let auditLogFailed = false;
@@ -63,7 +64,8 @@ export default async function (client: Client, messageDeleted: Message) {
     auditLogData = parseAuditLogEntry(
       deletionLog,
       messageDeleted.author?.id,
-      messageDeleted.channelId
+      messageDeleted.channelId,
+      client
     );
   } catch (error) {
     auditLogFailed = true;
@@ -113,8 +115,8 @@ export default async function (client: Client, messageDeleted: Message) {
   } else {
     // const text = escapeCodeBlock(messageDeleted.content);
 
-    // const textLenghtFormat = text.length > 4000 ? text.slice(0, 4000) + "... (truncated)" : text;
-    // formattedText = "```\n" + textLenghtFormat + "\n```";
+    // const textLengthFormat = text.length > 4000 ? text.slice(0, 4000) + "... (truncated)" : text;
+    // formattedText = "```\n" + textLengthFormat + "\n```";
     formattedText = messageDeleted.content;
   }
 
