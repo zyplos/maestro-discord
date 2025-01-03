@@ -44,6 +44,7 @@ const client = new Client({
     Partials.Channel,
     Partials.Reaction,
     Partials.User,
+    Partials.GuildMember,
   ],
   presence: {
     activities: [{ name: "MM8BDM", type: ActivityType.Competing }],
@@ -99,9 +100,9 @@ const filePaths = (
 ).filter((filePath) => [".js", ".cjs", ".ts"].includes(extname(filePath)));
 
 for (const filePath of filePaths) {
-  const fileExtention = extname(filePath);
+  const fileExtension = extname(filePath);
   const fileName = basename(filePath);
-  const eventName = basename(fileName, fileExtention);
+  const eventName = basename(fileName, fileExtension);
 
   logger.debug(`Loading event file: ${fileName}`);
   const importedModule = require(join(__dirname, "events", filePath));
@@ -149,6 +150,11 @@ await creator.syncCommands();
 
 // Start the client
 client.login(process.env.DISCORD_BOT_TOKEN);
+// add to global for debugging
+declare global {
+  var clientRef: Client;
+}
+global.clientRef = client;
 
 // on process shutdown, close the database connection
 process.on("SIGINT", () => {
