@@ -35,7 +35,7 @@
   "scripts": {
     "start": "bun index.ts",
     "dev": "bun --watch index.ts",
-    "debugger": "bun --inspect-wait index.ts",
+    "debugger": "bun --inspect --watch index.ts",
     "format": "biome format --write ./",
     "lint": "biome lint ./",
     "check": "tsc --noEmit",
