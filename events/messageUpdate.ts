@@ -111,7 +111,7 @@ export default async function (
         newMessage.author.id
       })** edited a message in ${channelString}\n\n${
         textDiffReportFileAttachment
-          ? "The message changes have been added to the top of this report."
+          ? "The message changes have been added to the top of this report because of their length."
           : textDiffReport
       }`
     )
