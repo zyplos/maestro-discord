@@ -2,7 +2,7 @@ import {
   type Client,
   type Message,
   EmbedBuilder,
-  AuditLogEvent,
+  type GuildBasedChannel,
   type GuildAuditLogsEntry,
   escapeMarkdown,
   MessageType,
@@ -10,40 +10,16 @@ import {
   AttachmentBuilder,
   DiscordAPIError,
   type MessageReference,
+  GuildChannel,
 } from "discord.js";
 import {
   getServerLogChannel,
   isStringBlank,
+  makeChannelInfoString,
+  makeUserInfoString,
   pluralize,
   truncateFileName,
 } from "../internals/util";
-
-function parseAuditLogEntry(
-  deletionLog: GuildAuditLogsEntry<AuditLogEvent.MessageDelete> | undefined,
-  authorId: string | null,
-  channelId: string,
-  client: Client
-) {
-  if (!deletionLog) return null;
-
-  const { executor, target, extra } = deletionLog;
-  // client.logger.debug(deletionLog, "deletionLog");
-
-  if (!executor) return null;
-  const executorString = `🛡️ Deleted by ${executor} (${executor.tag} ${executor.id})\n`;
-  const targetString = `👤 Sent by ${target} (${target.tag} ${target.id})`;
-
-  if (!authorId) {
-    if (extra.channel && extra.channel.id === channelId) {
-      return { executorString, targetString };
-    }
-
-    return null;
-  }
-
-  if (target.id !== authorId) return null;
-  return { executorString, targetString };
-}
 
 export default async function (client: Client, messageDeleted: Message) {
   if (messageDeleted.author?.id === process.env.DISCORD_BOT_ID) return; // stuff from our bot shouldn't be logged
@@ -53,61 +29,38 @@ export default async function (client: Client, messageDeleted: Message) {
   const logChannel = await getServerLogChannel(client, messageDeleted.guild.id);
   if (!logChannel) return; // guild hasn't set up their log channel
 
-  let auditLogData = null;
-  let auditLogFailed = false;
-  try {
-    const fetchedLogs = await messageDeleted.guild.fetchAuditLogs({
-      limit: 1,
-      type: AuditLogEvent.MessageDelete,
-    });
-    const deletionLog = fetchedLogs.entries.first();
-    auditLogData = parseAuditLogEntry(
-      deletionLog,
-      messageDeleted.author?.id,
-      messageDeleted.channelId,
-      client
-    );
-  } catch (error) {
-    auditLogFailed = true;
-  }
-
   const messageChannel = messageDeleted.channel;
-  const channelName =
-    messageChannel.isTextBased() &&
-    !messageChannel.isDMBased() &&
-    messageChannel.name;
-  const isThreadChannel = messageChannel.isThread();
-  const channelNameFormatted = channelName
-    ? `(${(isThreadChannel && "💬") || ""}#${channelName})`
-    : "";
-  const channelString = `${messageChannel} ${channelNameFormatted}`;
+  if (!(messageChannel instanceof GuildChannel)) return;
 
-  if (messageDeleted.partial) {
-    let auditLogString = "";
-    if (auditLogData) {
-      auditLogString +=
-        "Server Audit Log's last detected deleted message in that channel:\n";
-      auditLogString += `${auditLogData.targetString}\n`;
-      auditLogString += `${auditLogData.executorString}\n`;
-    }
-    if (auditLogFailed) {
-      auditLogString +=
-        "Couldn't get the server's Audit Log to get extra info. Please make sure I have the \"View Audit Log\" permission.\n";
-    }
+  const channelString = makeChannelInfoString(messageChannel);
 
-    const msgEmbed = new EmbedBuilder()
-      .setTitle("Message Deleted")
-      .setDescription(
-        `An old untracked message was deleted from ${channelString}.\nNo accurate data could be found on the author.\n\n${auditLogString}`
-      )
-      .setColor(0xff3e3e)
-      .setTimestamp(messageDeleted.createdTimestamp)
-      .setFooter({
-        text: "Deleted message was originally sent",
-      });
+  // this didn't always work, audit log events just get dumped into the log channel now
+  // if (messageDeleted.partial) {
+  //   let auditLogString = "";
+  //   if (auditLogData) {
+  //     auditLogString +=
+  //       "Server Audit Log's last detected deleted message in that channel:\n";
+  //     auditLogString += `${auditLogData.targetString}\n`;
+  //     auditLogString += `${auditLogData.executorString}\n`;
+  //   }
+  //   if (auditLogFailed) {
+  //     auditLogString +=
+  //       "Couldn't get the server's Audit Log to get extra info. Please make sure I have the \"View Audit Log\" permission.\n";
+  //   }
 
-    return logChannel.send({ content: "\t", embeds: [msgEmbed] });
-  }
+  //   const msgEmbed = new EmbedBuilder()
+  //     .setTitle("Message Deleted")
+  //     .setDescription(
+  //       `An old untracked message was deleted from ${channelString}.\nNo accurate data could be found on the author.\n\n${auditLogString}`
+  //     )
+  //     .setColor(0xff3e3e)
+  //     .setTimestamp(messageDeleted.createdTimestamp)
+  //     .setFooter({
+  //       text: "Deleted message was originally sent",
+  //     });
+
+  //   return logChannel.send({ content: "\t", embeds: [msgEmbed] });
+  // }
 
   let formattedText: string;
   if (isStringBlank(messageDeleted.content)) {
@@ -121,15 +74,9 @@ export default async function (client: Client, messageDeleted: Message) {
     formattedText = messageDeleted.content;
   }
 
-  const userString = `${messageDeleted.author} (${messageDeleted.author.tag} ${messageDeleted.author.id})`;
+  const userString = makeUserInfoString(messageDeleted.author);
 
   let reportText = `A message from **${userString}** was deleted in ${channelString}\n`;
-  if (auditLogFailed) {
-    reportText +=
-      "Couldn't get the server's Audit Log to get extra info. Please make sure I have the \"View Audit Log\" permission.\n";
-  } else {
-    reportText += auditLogData ? `${auditLogData.executorString}\n` : "";
-  }
 
   // flags
   const messageFlags = messageDeleted.flags.serialize();
@@ -243,15 +190,9 @@ export default async function (client: Client, messageDeleted: Message) {
         if (!referenceMessage) break;
 
         const referenceMessageId = referenceMessage.id;
-        const authorName = referenceMessage.author.tag;
-        const authorId = referenceMessage.author.id;
-        const isSystemMessage = referenceMessage.system;
-        const isBotMessage = referenceMessage.author.bot;
-
-        const botSystemTags = `${isSystemMessage ? "[SYSTEM]" : ""}${
-          isBotMessage ? "[BOT]" : ""
-        } `;
-        const authorText = `<@${authorId}> **(${botSystemTags}${authorName} ${authorId})**'s message (id: ${referenceMessageId})`;
+        const authorText = `${makeUserInfoString(
+          referenceMessage.author
+        )}'s message (id: ${referenceMessageId})`;
 
         reportText += `This message was a reply to ${authorText}. [(jump to message)](${referenceMessage.url})\n`;
 
@@ -284,7 +225,7 @@ export default async function (client: Client, messageDeleted: Message) {
   if (messageDeleted.interaction) {
     msgEmbed.addFields({
       name: "User Interaction",
-      value: `This message responded to the following command: **${messageDeleted.interaction.commandName}**`,
+      value: `This message responded to the following command:\n**${messageDeleted.interaction.commandName}**`,
     });
   }
 
@@ -306,7 +247,8 @@ export default async function (client: Client, messageDeleted: Message) {
 
   // webhookId
   const isFromAWebhook = messageDeleted.webhookId;
-  if (isFromAWebhook) {
+  // this will fail if it was also an interaction, so check for that too
+  if (isFromAWebhook && !messageDeleted.interaction) {
     try {
       const webhookReference = await messageDeleted.fetchWebhook();
       msgEmbed.addFields({
