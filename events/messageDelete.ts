@@ -169,7 +169,11 @@ export default async function (client: Client, messageDeleted: Message) {
 
   // stickers
   if (messageDeleted.stickers.size > 0) {
-    reportText += "This message had stickers.\n";
+    reportText += "This message had stickers: ";
+    const stickerUrls = messageDeleted.stickers.map(
+      (sticker) => `[${sticker.name}](${sticker.url})`
+    );
+    reportText += `${stickerUrls.join(", ")}\n`;
   }
 
   // system
