@@ -1,4 +1,9 @@
-import { ChannelType, type Client } from "discord.js";
+import {
+  ChannelType,
+  type User,
+  type Client,
+  type GuildChannel,
+} from "discord.js";
 
 export const channelTypes = {
   [ChannelType.GuildText]: "Text Channel",
@@ -90,4 +95,17 @@ export function truncateFileName(fileName: string | null): string {
   }
 
   return `${name.substring(0, maxLength)}.${extension} (truncated)`;
+}
+
+export function makeUserInfoString(user: User) {
+  const systemString = user.system ? "[SYSTEM]" : "";
+  const botString = user.bot ? "[BOT]" : "";
+  return `**${user} (${systemString}${botString}${user.tag} ${user.id})**`;
+}
+
+export function makeChannelInfoString(channel: GuildChannel) {
+  const channelName = channel.name;
+  const isThreadChannel = channel.isThread();
+  const threadString = isThreadChannel ? "💬" : "";
+  return `${channel} (${threadString}#${channelName})`;
 }
