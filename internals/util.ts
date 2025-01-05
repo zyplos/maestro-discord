@@ -75,6 +75,7 @@ export async function validateChannelPermissions(
 ) {
   const permissionsField = channel.permissionsFor(clientUser);
 
+  // future TODO: return missing permissions as an array so we can tell the user everything they're missing in config
   if (!permissionsField) {
     throw new MaestroPermissionsError(
       `I couldn't check if I have permission to send messages in <#${channel.id}>. Please try again later.`

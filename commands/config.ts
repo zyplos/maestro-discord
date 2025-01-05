@@ -3,6 +3,7 @@ import {
   AutoModerationRuleEventType,
   AutoModerationRuleTriggerType,
   DiscordAPIError,
+  EmbedBuilder,
   PermissionFlagsBits,
   type Client,
 } from "discord.js";
@@ -18,6 +19,10 @@ import {
 } from "slash-create";
 import { getTextChannel, validateChannelPermissions } from "../internals/util";
 import badWords from "../internals/badWords.json";
+import {
+  MaestroChannelError,
+  MaestroPermissionsError,
+} from "../internals/errors";
 
 export default class ConfigCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
@@ -28,6 +33,12 @@ export default class ConfigCommand extends SlashCommand {
       requiredPermissions: ["MANAGE_GUILD"],
       guildIDs: [process.env.DEV_GUILD_ID, "426394718172086273"],
       options: [
+        {
+          type: CommandOptionType.SUB_COMMAND,
+          name: "view",
+          description:
+            "Check which channel logs are sent to and whether Maestro has the correct permissions.",
+        },
         {
           type: CommandOptionType.SUB_COMMAND,
           name: "set-logchannel",
@@ -125,8 +136,7 @@ export default class ConfigCommand extends SlashCommand {
       });
 
       return {
-        content:
-          "Maestro's Default Ruleset has been added to the AutoMod rules. You can edit it to your liking in **Server Settings** > **AutoMod**.",
+        content: `Maestro's Default Ruleset has been added to the AutoMod rules. You can edit it to your liking in **[Server Settings](discord://-/guilds/${guild.id}/settings)** > **AutoMod**.`,
         ephemeral: true,
       };
     } catch (error) {
@@ -160,6 +170,95 @@ export default class ConfigCommand extends SlashCommand {
     }
   }
 
+  async viewConfig(ctx: CommandContext, guildId: string) {
+    const client = this.client as Client;
+    const clientUser = client.user;
+    const guild = await client.guilds.fetch(guildId);
+    const clientGuildMember = await guild.members.fetchMe();
+
+    if (!clientUser) {
+      return {
+        content: "Sorry, not ready to take commands yet. Try again later.",
+        ephemeral: true,
+      };
+    }
+
+    const logChannelId = await client.db.getServerLogChannelId(guildId);
+
+    if (!logChannelId) {
+      return {
+        content: "No log channel has been set for this server.",
+        ephemeral: true,
+      };
+    }
+
+    try {
+      const logChannel = await getTextChannel(client, logChannelId);
+
+      await validateChannelPermissions(clientUser, logChannel);
+
+      // check guild level permissions
+      const guildPermissions = clientGuildMember.permissions;
+
+      const hasAuditLogAccess = guildPermissions.has(
+        PermissionFlagsBits.ViewAuditLog,
+        true
+      );
+      const hasWebhookAccess = guildPermissions.has(
+        PermissionFlagsBits.ManageWebhooks,
+        true
+      );
+
+      // future TODO: no need for duplicate text
+      const msgEmbed = new EmbedBuilder()
+        .setTitle("Config Overview")
+        .setDescription(
+          `Server logs are currently being sent to <#${
+            logChannel.id
+          }>.\n\nAll required permissions are set up for Maestro to send logs to this channel.\n\nOptional Permissions:\n- **View Audit Log**: ${
+            hasAuditLogAccess ? "✅" : "❌"
+          }\n-# Maestro uses this permission add context to things like deleted messages when available (such as who deleted it).\n- **Manage Webhooks**: ${
+            hasWebhookAccess ? "✅" : "❌"
+          }\n-# Maestro uses this permission to be able to attribute deleted messages to the webhook that posted it.`
+        )
+        .setColor(0x58d858);
+
+      return {
+        content: "\t",
+        ephemeral: true,
+        embeds: [msgEmbed],
+      };
+    } catch (error) {
+      if (
+        error instanceof MaestroChannelError ||
+        error instanceof MaestroPermissionsError
+      ) {
+        const msgEmbed = new EmbedBuilder()
+          .setTitle("Config Overview")
+          .setDescription(
+            `The log channel <#${logChannelId}> has become misconfigured since it was last set:\n${
+              (error as Error).message
+            }\n\nThe following permissions are required for Maestro to send logs to this channel:\n- **View Channel**\n- **Send Messages**\n- **Embed Links**\n-# Maestro uses this permission to send rich embeds in the log channel.\n- **Attach Files**\n-# Maestro uses this permission to attach files when log messages are too long to fit in one message.\n\nOptional Permissions:\n- **View Audit Log**\n-# Maestro uses this permission add context to things like deleted messages when available (such as who deleted it).\n- **Manage Webhooks**\n-# Maestro uses this permission to be able to attribute deleted messages to the webhook that posted it.`
+          )
+          .setColor(0x58d858);
+        return {
+          content: "\t",
+          ephemeral: true,
+          embeds: [msgEmbed],
+        };
+      }
+
+      client.logger.error(
+        error,
+        "Unexpected error while trying to validate log channel permissions."
+      );
+      return {
+        content: `Sorry, I got an unexpected error while trying to validate if <#${logChannelId}>'s permissions are set up for me to post in.`,
+        ephemeral: true,
+      };
+    }
+  }
+
   async run(ctx: CommandContext) {
     const guildId = ctx.guildID;
 
@@ -168,6 +267,10 @@ export default class ConfigCommand extends SlashCommand {
         content: "Sorry, I couldn't grab your server's ID. Try again later.",
         ephemeral: true,
       };
+    }
+
+    if (ctx.subcommands[0] === "view") {
+      return this.viewConfig(ctx, guildId);
     }
 
     if (ctx.subcommands[0] === "set-logchannel") {
@@ -181,7 +284,7 @@ export default class ConfigCommand extends SlashCommand {
     return {
       ephemeral: true,
       content:
-        "Please provide a valid subcommand to run (set-logchannel, add-moddefaults).",
+        "Please provide a valid subcommand to run (view, set-logchannel, add-moddefaults).",
     };
   }
 }
