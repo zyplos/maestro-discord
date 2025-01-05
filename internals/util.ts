@@ -7,6 +7,7 @@ import {
   PermissionFlagsBits,
   type ClientUser,
 } from "discord.js";
+import { MaestroChannelError, MaestroPermissionsError } from "./errors";
 
 export const channelTypes: { [key in ChannelType]: string } = {
   [ChannelType.GuildText]: "Text Channel",
@@ -24,25 +25,33 @@ export const channelTypes: { [key in ChannelType]: string } = {
   [ChannelType.GuildMedia]: "Media Channel",
 };
 
+/**
+ * Fetches a text channel from the Discord client by its ID.
+ *
+ * @param client - The Discord client instance.
+ * @param channelId - The ID of the channel to fetch.
+ * @returns The fetched text channel.
+ * @throws Will throw an error if the channel is not accessible, is a DM channel, or is not a server text channel.
+ */
 export async function getTextChannel(client: Client, channelId: string) {
   const channel = await client.channels.fetch(channelId);
   // channel was deleted or the bot doesn't have access to it
   if (!channel) {
-    throw new Error(
+    throw new MaestroChannelError(
       "I don't have access to view that channel (or it was just deleted)."
     );
   }
 
   // completely invalid channel type
   if (channel.isDMBased()) {
-    throw new Error(
+    throw new MaestroChannelError(
       `<#${channelId}> is a DM channel, not a server text channel.`
     );
   }
 
   // guild set log channel to an invalid channel type
   if (channel.type !== ChannelType.GuildText || !channel.isTextBased()) {
-    throw new Error(
+    throw new MaestroChannelError(
       `<#${channelId}> is a ${
         channelTypes[channel.type]
       }, not a server text channel.`
@@ -52,7 +61,14 @@ export async function getTextChannel(client: Client, channelId: string) {
   return channel;
 }
 
-// throws if bot doesn't have required permissions
+/**
+ * Validates if the client user has the necessary permissions to send messages in the specified text channel.
+ *
+ * @param clientUser - The client user whose permissions are being checked.
+ * @param channel - The text channel in which the permissions are being validated.
+ * @returns A promise that resolves to `true` if the client user has the required permissions.
+ * @throws Will throw an error if the permissions cannot be checked or if the client user lacks the necessary permissions.
+ */
 export async function validateChannelPermissions(
   clientUser: ClientUser,
   channel: TextChannel
@@ -60,7 +76,7 @@ export async function validateChannelPermissions(
   const permissionsField = channel.permissionsFor(clientUser);
 
   if (!permissionsField) {
-    throw new Error(
+    throw new MaestroPermissionsError(
       `I couldn't check if I have permission to send messages in <#${channel.id}>. Please try again later.`
     );
   }
@@ -72,7 +88,7 @@ export async function validateChannelPermissions(
       true
     )
   ) {
-    throw new Error(
+    throw new MaestroPermissionsError(
       `I don't have permission to see and send messages in <#${channel.id}>. Please make sure I have the **View Channel** and **Send Messages** permission in that channel.`
     );
   }
@@ -81,6 +97,14 @@ export async function validateChannelPermissions(
   return true;
 }
 
+/**
+ * Retrieves the log channel for a specific server.
+ *
+ * @param client - The Discord client instance.
+ * @param serverId - The ID of the server to retrieve the log channel for.
+ * @returns The log channel if it exists, otherwise `false`.
+ * @throws Will throw an error if the log channel has become inaccessible since it was set.
+ */
 export async function getServerLogChannel(client: Client, serverId: string) {
   const logChannelId = await client.db.getServerLogChannelId(serverId);
 
