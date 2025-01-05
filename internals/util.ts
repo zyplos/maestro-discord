@@ -93,6 +93,18 @@ export async function validateChannelPermissions(
     );
   }
 
+  if (!permissionsField.has(PermissionFlagsBits.EmbedLinks, true)) {
+    throw new MaestroPermissionsError(
+      `I don't have permission send embeds in <#${channel.id}>. Please make sure I have the **Embed Links** permission in that channel.`
+    );
+  }
+
+  if (!permissionsField.has(PermissionFlagsBits.AttachFiles, true)) {
+    throw new MaestroPermissionsError(
+      `I don't have permission to attach files in <#${channel.id}>. Please make sure I have the **Attach Files** permission in that channel.`
+    );
+  }
+
   // looks good
   return true;
 }
