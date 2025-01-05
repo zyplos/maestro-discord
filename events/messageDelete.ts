@@ -8,6 +8,8 @@ import {
   MessageType,
   DiscordjsError,
   AttachmentBuilder,
+  DiscordAPIError,
+  type MessageReference,
 } from "discord.js";
 import {
   getServerLogChannel,
@@ -25,7 +27,7 @@ function parseAuditLogEntry(
   if (!deletionLog) return null;
 
   const { executor, target, extra } = deletionLog;
-  client.logger.debug(deletionLog, "deletionLog");
+  // client.logger.debug(deletionLog, "deletionLog");
 
   if (!executor) return null;
   const executorString = `🛡️ Deleted by ${executor} (${executor.tag} ${executor.id})\n`;
@@ -50,8 +52,6 @@ export default async function (client: Client, messageDeleted: Message) {
 
   const logChannel = await getServerLogChannel(client, messageDeleted.guild.id);
   if (!logChannel) return; // guild hasn't set up their log channel
-
-  client.logger.debug(messageDeleted, "messageDeleted");
 
   let auditLogData = null;
   let auditLogFailed = false;
@@ -117,6 +117,7 @@ export default async function (client: Client, messageDeleted: Message) {
 
     // const textLengthFormat = text.length > 4000 ? text.slice(0, 4000) + "... (truncated)" : text;
     // formattedText = "```\n" + textLengthFormat + "\n```";
+    // ^^^ no actual need to check the length since we're dedicating a field to the message content
     formattedText = messageDeleted.content;
   }
 
@@ -132,16 +133,20 @@ export default async function (client: Client, messageDeleted: Message) {
 
   // flags
   const messageFlags = messageDeleted.flags.serialize();
-  if (messageFlags.Crossposted)
+  if (messageFlags.Crossposted) {
     reportText +=
       "This message was published to servers following this channel.\n";
-  if (messageFlags.IsCrosspost)
+  }
+  if (messageFlags.IsCrosspost) {
     reportText += "This message was sent from a followed channel.\n";
-  if (messageFlags.Urgent)
+  }
+  if (messageFlags.Urgent) {
     reportText += "This message was an official message from Discord.\n";
-  if (messageFlags.Loading)
+  }
+  if (messageFlags.Loading) {
     reportText +=
       "This was an interaction from a bot that didn't finish responding.\n";
+  }
 
   // activity
   if (messageDeleted.activity) {
@@ -227,21 +232,39 @@ export default async function (client: Client, messageDeleted: Message) {
       case MessageType.StageTopic:
         reportText += "This message was stage topic system notification.";
         break;
-      case MessageType.Reply:
-        reportText += "This message was a reply to someone.";
+      case MessageType.Reply: {
+        const referenceMessage = await messageDeleted.fetchReference();
+
+        // not very helpful to just say it was a reply, so say nothing
+        if (!referenceMessage) break;
+
+        const referenceMessageId = referenceMessage.id;
+        const authorName = referenceMessage.author.tag;
+        const authorId = referenceMessage.author.id;
+        const isSystemMessage = referenceMessage.system;
+        const isBotMessage = referenceMessage.author.bot;
+
+        const botSystemTags = `${isSystemMessage ? "[SYSTEM]" : ""}${
+          isBotMessage ? "[BOT]" : ""
+        } `;
+        const authorText = `<@${authorId}> **(${botSystemTags}${authorName} ${authorId})**'s message (id: ${referenceMessageId})`;
+
+        reportText += `This message was a reply to ${authorText}. [(jump to message)](${referenceMessage.url})\n`;
+
         break;
+      }
     }
 
     reportText += "\n";
   }
 
   const msgEmbed = new EmbedBuilder()
-    .setTitle("Message Deleted:")
+    .setTitle("Message Deleted")
     .setDescription(formattedText)
     .setColor(0xff3e3e)
     .setTimestamp(messageDeleted.createdTimestamp)
     .setFooter({
-      text: "Deleted message was originally sent",
+      text: `Message ID: ${messageDeleted.id} • Deleted message was originally sent`,
     })
     .setThumbnail(
       messageDeleted.author.displayAvatarURL({
@@ -289,8 +312,13 @@ export default async function (client: Client, messageDeleted: Message) {
         )} (${isFromAWebhook})** webhook.`,
       });
     } catch (error) {
-      if (error instanceof DiscordjsError) {
-        // nothing i need to report here
+      console.log(error);
+      if (error instanceof DiscordAPIError && error.code === 50013) {
+        msgEmbed.addFields({
+          name: "Webhook",
+          value:
+            'This message was sent from a webhook, but I don\'t have the **"Manage Webhooks"** permission to fetch its name.',
+        });
       } else {
         msgEmbed.addFields({
           name: "Webhook",
