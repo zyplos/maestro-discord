@@ -61,6 +61,11 @@ export default async function (client: Client, messageDeleted: Message) {
 
   //   return logChannel.send({ content: "\t", embeds: [msgEmbed] });
   // }
+  // can't do much with partial messages, return
+  if (messageDeleted.partial) {
+    // console.log(messageDeleted);
+    return;
+  }
 
   let formattedText: string;
   if (isStringBlank(messageDeleted.content)) {
