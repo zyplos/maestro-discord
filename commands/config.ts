@@ -16,7 +16,7 @@ import {
   TextInputStyle,
   ButtonStyle,
 } from "slash-create";
-import { getTextChannel } from "../internals/util";
+import { getTextChannel, validateChannelPermissions } from "../internals/util";
 import badWords from "../internals/badWords.json";
 
 export default class ConfigCommand extends SlashCommand {
@@ -31,7 +31,7 @@ export default class ConfigCommand extends SlashCommand {
         {
           type: CommandOptionType.SUB_COMMAND,
           name: "set-logchannel",
-          description: "Set the channel where server events will be sent",
+          description: "Set the channel where server events will be sent.",
           options: [
             {
               type: CommandOptionType.CHANNEL,
@@ -67,27 +67,7 @@ export default class ConfigCommand extends SlashCommand {
     try {
       const channel = await getTextChannel(this.client, channelId);
 
-      const permissionsField = channel.permissionsFor(clientUser);
-
-      if (!permissionsField) {
-        return {
-          content: `I couldn't check if I have permission to send messages in <#${channel.id}>. Please try again later.`,
-          ephemeral: true,
-        };
-      }
-
-      // check if bot has "Send Messages" permission in the channel
-      if (
-        !permissionsField.has(
-          [PermissionFlagsBits.SendMessages, PermissionFlagsBits.ViewChannel],
-          true
-        )
-      ) {
-        return {
-          content: `I don't have permission to see and send messages in <#${channel.id}>. Please make sure I have the **View Channel** and **Send Messages** permission in that channel.`,
-          ephemeral: true,
-        };
-      }
+      await validateChannelPermissions(clientUser, channel);
 
       client.db.updateServer(guildId, channel.id);
 

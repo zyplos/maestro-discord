@@ -3,9 +3,12 @@ import {
   type User,
   type Client,
   type GuildChannel,
+  type TextChannel,
+  PermissionFlagsBits,
+  type ClientUser,
 } from "discord.js";
 
-export const channelTypes = {
+export const channelTypes: { [key in ChannelType]: string } = {
   [ChannelType.GuildText]: "Text Channel",
   [ChannelType.DM]: "DM Channel",
   [ChannelType.GuildVoice]: "Voice Channel",
@@ -47,6 +50,35 @@ export async function getTextChannel(client: Client, channelId: string) {
   }
 
   return channel;
+}
+
+// throws if bot doesn't have required permissions
+export async function validateChannelPermissions(
+  clientUser: ClientUser,
+  channel: TextChannel
+) {
+  const permissionsField = channel.permissionsFor(clientUser);
+
+  if (!permissionsField) {
+    throw new Error(
+      `I couldn't check if I have permission to send messages in <#${channel.id}>. Please try again later.`
+    );
+  }
+
+  // check if bot has "Send Messages" permission in the channel
+  if (
+    !permissionsField.has(
+      [PermissionFlagsBits.SendMessages, PermissionFlagsBits.ViewChannel],
+      true
+    )
+  ) {
+    throw new Error(
+      `I don't have permission to see and send messages in <#${channel.id}>. Please make sure I have the **View Channel** and **Send Messages** permission in that channel.`
+    );
+  }
+
+  // looks good
+  return true;
 }
 
 export async function getServerLogChannel(client: Client, serverId: string) {
