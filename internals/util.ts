@@ -116,13 +116,13 @@ export async function validateChannelPermissions(
  * @param client - The Discord client instance.
  * @param serverId - The ID of the server to retrieve the log channel for.
  * @returns The log channel if it exists, otherwise `false`.
- * @throws Will throw an error if the log channel has become inaccessible since it was set.
+ * @throws {MaestroChannelError} Throws if the log channel has become inaccessible since it was set.
  */
 export async function getServerLogChannel(client: Client, serverId: string) {
   const logChannelId = await client.db.getServerLogChannelId(serverId);
 
   // guild hasn't set up their log channel
-  if (!logChannelId) return false;
+  if (!logChannelId) return null;
 
   const logChannel = await getTextChannel(client, logChannelId);
 
