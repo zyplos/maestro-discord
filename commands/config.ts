@@ -234,13 +234,13 @@ export default class ConfigCommand extends SlashCommand {
         error instanceof MaestroPermissionsError
       ) {
         const msgEmbed = new EmbedBuilder()
-          .setTitle("Config Overview")
+          .setTitle("Config Overview (Currently Misconfigured)")
           .setDescription(
             `The log channel <#${logChannelId}> has become misconfigured since it was last set:\n${
               (error as Error).message
             }\n\nThe following permissions are required for Maestro to send logs to this channel:\n- **View Channel**\n- **Send Messages**\n- **Embed Links**\n-# Maestro uses this permission to send rich embeds in the log channel.\n- **Attach Files**\n-# Maestro uses this permission to attach files when log messages are too long to fit in one message.\n\nOptional Permissions:\n- **View Audit Log**\n-# Maestro uses this permission add context to things like deleted messages when available (such as who deleted it).\n- **Manage Webhooks**\n-# Maestro uses this permission to be able to attribute deleted messages to the webhook that posted it.`
           )
-          .setColor(0x58d858);
+          .setColor(0xff3e3e);
         return {
           content: "\t",
           ephemeral: true,
