@@ -167,9 +167,9 @@ export function truncateFileName(fileName: string | null): string {
 }
 
 export function makeUserInfoString(user: User) {
-  const systemString = user.system ? "[SYSTEM]" : "";
-  const botString = user.bot ? "[BOT]" : "";
-  return `**${user} (${systemString}${botString} ${user.tag} ${user.id})**`;
+  const systemString = user.system ? "[SYSTEM] " : "";
+  const botString = user.bot ? "[BOT] " : "";
+  return `**${user} (${systemString}${botString}${user.tag} ${user.id})**`;
 }
 
 export function makeChannelInfoString(channel: GuildChannel) {
