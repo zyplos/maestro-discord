@@ -5,27 +5,37 @@ import {
   type Client,
   AuditLogEvent,
   EmbedBuilder,
+  type GuildAuditLogsActionType,
+  type GuildAuditLogsTargetType,
 } from "discord.js";
 import {
   getServerLogChannel,
   makeChannelInfoString,
   makeUserInfoString,
 } from "../internals/util";
+import LoggedEvent from "../internals/LoggedEvent";
 
-export default async function (
-  client: Client,
-  auditLogEntry: GuildAuditLogsEntry,
-  guild: Guild
-) {
-  console.log(auditLogEntry);
-  const logChannel = await getServerLogChannel(client, guild.id);
-  if (!logChannel) return;
+export default class GuildAuditLogEntryHandler extends LoggedEvent<"guildAuditLogEntryCreate"> {
+  constructor(client: Client) {
+    super(client);
+    this.eventName = "guildAuditLogEntryCreate";
+  }
 
-  const { action } = auditLogEntry;
+  grabGuild(auditLogEntry: GuildAuditLogsEntry, guild: Guild) {
+    return guild;
+  }
 
-  // Check only for deleted messages.
-  if (action === AuditLogEvent.MessageDelete) {
-    handleMessageDelete(client, auditLogEntry, logChannel);
+  run(
+    logChannel: TextChannel,
+    auditLogEntry: GuildAuditLogsEntry,
+    guild: Guild
+  ) {
+    const { action } = auditLogEntry;
+
+    // Check only for deleted messages.
+    if (action === AuditLogEvent.MessageDelete) {
+      handleMessageDelete(this.client, auditLogEntry, logChannel);
+    }
   }
 }
 
@@ -75,9 +85,6 @@ async function handleMessageDelete(
         size: 128,
       })
     );
-  // .setFooter({
-  //   text: `Message ID: ${messageDeleted.id} • Deleted message was originally sent`,
-  // })
 
   await logChannel.send({ embeds: [embed] });
 }

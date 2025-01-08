@@ -1,77 +1,40 @@
 import {
-  AuditLogEvent,
   type Client,
   type DMChannel,
   EmbedBuilder,
   escapeMarkdown,
-  type GuildAuditLogsEntry,
   type NonThreadGuildBasedChannel,
-  ChannelType,
+  type TextChannel,
 } from "discord.js";
-import { channelTypes, getServerLogChannel } from "../internals/util";
+import { channelTypes } from "../internals/util";
+import LoggedEvent from "../internals/LoggedEvent";
+export default class ChannelDeleteHandler extends LoggedEvent<"channelDelete"> {
+  constructor(client: Client) {
+    super(client);
+    this.eventName = "channelDelete";
+  }
 
-function parseAuditLogEntry(
-  deletionLog: GuildAuditLogsEntry<AuditLogEvent.ChannelDelete> | undefined,
-  channelId: string
-) {
-  if (!deletionLog) return null;
+  grabGuild(channel: DMChannel | NonThreadGuildBasedChannel) {
+    if (channel.isDMBased()) return null; // don't care about DMs
+    return channel.guild;
+  }
 
-  const { executor, target } = deletionLog;
-  console.log("deletionLog", deletionLog);
-  if (target.id !== channelId) return null;
+  run(logChannel: TextChannel, channel: NonThreadGuildBasedChannel) {
+    const channelType = channelTypes[channel.type] || "";
 
-  if (!executor) return null;
-  const executorString = `🛡️ Deleted by ${executor} (${executor.tag} ${executor.id})\n`;
+    const msgEmbed = new EmbedBuilder()
+      .setTitle("Channel Deleted")
+      .setDescription(
+        `${channelType} **${escapeMarkdown(channel.name)} (${
+          channel.id
+        })** was deleted.`
+      )
+      .setColor(0xff0000)
+      .setTimestamp(new Date());
 
-  return executorString;
-}
-
-export default async function (
-  client: Client,
-  channel: DMChannel | NonThreadGuildBasedChannel
-) {
-  if (channel.isDMBased()) return; // don't care about DMs
-
-  const logChannel = await getServerLogChannel(client, channel.guild.id);
-  if (!logChannel) return; // guild hasn't set up their log channel
-
-  console.log("channel", channel);
-
-  let auditLogData = null;
-  let auditLogFailed = false;
-  try {
-    const fetchedLogs = await channel.guild.fetchAuditLogs({
-      limit: 1,
-      type: AuditLogEvent.ChannelDelete,
+    return logChannel.send({
+      content: "\t",
+      embeds: [msgEmbed],
     });
-    const deletionLog = fetchedLogs.entries.first();
-    auditLogData = parseAuditLogEntry(deletionLog, channel.id);
-  } catch (error) {
-    auditLogFailed = true;
   }
-
-  let reportText = "";
-  if (auditLogFailed) {
-    reportText +=
-      "Couldn't get the server's Audit Log to get extra info. Please make sure I have the \"View Audit Log\" permission.\n";
-  } else {
-    reportText += auditLogData ? `${auditLogData}\n` : "";
-  }
-
-  const channelType = channelTypes[channel.type] || "";
-
-  const msgEmbed = new EmbedBuilder()
-    .setTitle("Channel Deleted")
-    .setDescription(
-      `${channelType} **${escapeMarkdown(channel.name)} (${
-        channel.id
-      })** was deleted.\n${reportText}`
-    )
-    .setColor(0xff0000)
-    .setTimestamp(new Date());
-
-  return logChannel.send({
-    content: "\t",
-    embeds: [msgEmbed],
-  });
 }

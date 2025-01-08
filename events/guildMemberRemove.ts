@@ -1,25 +1,37 @@
-import { type Client, type GuildMember, EmbedBuilder } from "discord.js";
-import { getServerLogChannel } from "../internals/util";
+import {
+  type Client,
+  type GuildMember,
+  type PartialGuildMember,
+  EmbedBuilder,
+  type TextChannel,
+} from "discord.js";
+import LoggedEvent from "../internals/LoggedEvent";
 
-export default async function (client: Client, member: GuildMember) {
-  client.logger.debug(`${member.user.tag} left ${member.guild.name}`);
+export default class GuildMemberRemoveHandler extends LoggedEvent<"guildMemberRemove"> {
+  constructor(client: Client) {
+    super(client);
+    this.eventName = "guildMemberRemove";
+  }
 
-  const logChannel = await getServerLogChannel(client, member.guild.id);
-  if (!logChannel) return; // guild hasn't set up their log channel
+  grabGuild(member: GuildMember | PartialGuildMember) {
+    return member.guild;
+  }
 
-  const msgEmbed = new EmbedBuilder()
-    .setTitle("Member Left")
-    .setDescription(
-      `**${member.user.tag} (${member.user.id})** left the server.`
-    )
-    .setColor(0xe20808)
-    .setTimestamp(new Date())
-    .setThumbnail(
-      member.user.displayAvatarURL({
-        extension: "png",
-        size: 128,
-      })
-    );
+  run(logChannel: TextChannel, member: GuildMember) {
+    const msgEmbed = new EmbedBuilder()
+      .setTitle("Member Left")
+      .setDescription(
+        `**${member.user.tag} (${member.user.id})** left the server.`
+      )
+      .setColor(0xe20808)
+      .setTimestamp(new Date())
+      .setThumbnail(
+        member.user.displayAvatarURL({
+          extension: "png",
+          size: 128,
+        })
+      );
 
-  logChannel.send({ content: "\t", embeds: [msgEmbed] });
+    logChannel.send({ content: "\t", embeds: [msgEmbed] });
+  }
 }

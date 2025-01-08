@@ -1,15 +1,22 @@
-import type { Client, Collection, Message, Snowflake } from "discord.js";
-const messageDelete = require("./messageDelete");
+import type {
+  Client,
+  GuildTextBasedChannel,
+  Message,
+  PartialMessage,
+  ReadonlyCollection,
+} from "discord.js";
+import MaestroEvent from "../internals/MaestroEvent";
 
-export default async function (
-  client: Client,
-  bulkMessages: Collection<Snowflake, Message>
-) {
-  // console.log("messageDeleteBulk", bulkMessages);
-  // console.log("====");
+export default class MessageDeleteBulkHandler extends MaestroEvent<"messageDeleteBulk"> {
+  constructor(client: Client) {
+    super(client);
+    this.eventName = "messageDeleteBulk";
+  }
 
-  for (const deletedMessage of bulkMessages) {
-    // console.log(deletedMessage);
-    await messageDelete(client, deletedMessage);
+  run(
+    messages: ReadonlyCollection<string, Message<boolean> | PartialMessage>,
+    channel: GuildTextBasedChannel
+  ) {
+    this.client.logger.error("Method not implemented.");
   }
 }

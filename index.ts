@@ -10,6 +10,8 @@ import { join, extname, basename } from "node:path";
 import { readdir } from "node:fs/promises";
 import DatabaseManager from "./internals/database";
 import pino, { type Logger } from "pino";
+import LoggedEvent from "./internals/LoggedEvent";
+import MaestroEvent from "./internals/MaestroEvent";
 
 // declare our process.env stuff for Typescript to know about
 declare global {
@@ -90,24 +92,36 @@ declare module "discord.js" {
 client.db = new DatabaseManager();
 
 // Load events for the discord.js client from the ./events folder
-// Files from the ./events folder should be named with the event name discord.js looks for (https://discord.js.org/#/docs/discord.js/stable/class/Client)
-// For example, if you want a function to run on client event "guildMemberAdd", you should have a ./events/guildMemberAdd.js file
+// Files from the ./events folder can be named whatever you'd like, BUT they must default export a class that extends either LoggedEvent or MaestroEvent
+// See ./events/channelDelete.ts for an example of a LoggedEvent and ./events/ready.ts for an example of a MaestroEvent
 
 // get all files from a directory and its subdirectories
 // filter out stuff that isn't code
+const eventsDir = join(__dirname, "events");
 const filePaths = (
   await readdir(join(__dirname, "events"), { recursive: true })
 ).filter((filePath) => [".js", ".cjs", ".ts"].includes(extname(filePath)));
 
 for (const filePath of filePaths) {
-  const fileExtension = extname(filePath);
-  const fileName = basename(filePath);
-  const eventName = basename(fileName, fileExtension);
+  const fullPath = join(eventsDir, filePath);
+  console.log(`Loading event file: ${fullPath}`);
 
-  logger.debug(`Loading event file: ${fileName}`);
-  const importedModule = require(join(__dirname, "events", filePath));
-  const event = importedModule.default || importedModule;
-  client.on(eventName, event.bind(null, client));
+  const importedModule = await import(fullPath);
+  // es6 or cjs module
+  const EventClass = importedModule.default || importedModule;
+  const eventInstance = new EventClass(client);
+  const eventName = eventInstance.eventName;
+  console.log(`Loaded event: ${eventName}`);
+
+  if (eventInstance instanceof LoggedEvent) {
+    client.on(eventName, eventInstance.preRun.bind(eventInstance));
+  } else if (eventInstance instanceof MaestroEvent) {
+    client.on(eventName, eventInstance.run.bind(eventInstance));
+  } else {
+    throw new Error(
+      `File ${eventName} does not extend LoggedEvent or MaestroEvent`
+    );
+  }
 }
 
 // Create a SlashCreator instance, the main thing handling our slash commands
