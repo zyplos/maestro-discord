@@ -165,17 +165,22 @@ export default class MessageDeleteHandler extends LoggedEvent<"messageDelete"> {
           reportText += "This message was stage topic system notification.";
           break;
         case MessageType.Reply: {
-          const referenceMessage = await messageDeleted.fetchReference();
+          try {
+            const referenceMessage = await messageDeleted.fetchReference();
 
-          // not very helpful to just say it was a reply, so say nothing
-          if (!referenceMessage) break;
+            // not very helpful to just say it was a reply, so say nothing
+            if (!referenceMessage) break;
 
-          const referenceMessageId = referenceMessage.id;
-          const authorText = `${makeUserInfoString(
-            referenceMessage.author
-          )}'s message (id: ${referenceMessageId})`;
+            const referenceMessageId = referenceMessage.id;
+            const authorText = `${makeUserInfoString(
+              referenceMessage.author
+            )}'s message (id: ${referenceMessageId})`;
 
-          reportText += `This message was a reply to ${authorText}. [(jump to message)](${referenceMessage.url})\n`;
+            reportText += `This message was a reply to ${authorText}. [(jump to message)](${referenceMessage.url})\n`;
+          } catch (ep) {
+            reportText +=
+              "This message was a reply to a message that got deleted.\n";
+          }
 
           break;
         }
@@ -239,7 +244,6 @@ export default class MessageDeleteHandler extends LoggedEvent<"messageDelete"> {
           )} (${isFromAWebhook})** webhook.`,
         });
       } catch (error) {
-        console.log(error);
         if (error instanceof DiscordAPIError && error.code === 50013) {
           msgEmbed.addFields({
             name: "Webhook",
@@ -247,6 +251,10 @@ export default class MessageDeleteHandler extends LoggedEvent<"messageDelete"> {
               'This message was sent from a webhook, but I don\'t have the **"Manage Webhooks"** permission to fetch its name.',
           });
         } else {
+          this.client.logger.error(
+            error,
+            "messageDelete Error fetching webhook name"
+          );
           msgEmbed.addFields({
             name: "Webhook",
             value:
