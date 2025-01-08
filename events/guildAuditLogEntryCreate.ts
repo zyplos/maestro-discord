@@ -1,21 +1,18 @@
 import {
-  TextChannel,
+  type TextChannel,
   type GuildAuditLogsEntry,
   type Guild,
   type Client,
   AuditLogEvent,
   EmbedBuilder,
-  type GuildAuditLogsActionType,
-  type GuildAuditLogsTargetType,
 } from "discord.js";
-import {
-  getServerLogChannel,
-  makeChannelInfoString,
-  makeUserInfoString,
-} from "../internals/util";
+import { makeChannelInfoString, makeUserInfoString } from "../internals/util";
 import LoggedEvent from "../internals/LoggedEvent";
 
 export default class GuildAuditLogEntryHandler extends LoggedEvent<"guildAuditLogEntryCreate"> {
+  auditLogDisclaimer =
+    "\n\n-# Discord does not send specific details about the deleted message itself in the Audit Log. Cross-reference with other logs or open the Audit Log in Discord for more information.";
+
   constructor(client: Client) {
     super(client);
     this.eventName = "guildAuditLogEntryCreate";
@@ -34,57 +31,56 @@ export default class GuildAuditLogEntryHandler extends LoggedEvent<"guildAuditLo
 
     // Check only for deleted messages.
     if (action === AuditLogEvent.MessageDelete) {
-      handleMessageDelete(this.client, auditLogEntry, logChannel);
+      this.handleMessageDelete(logChannel, auditLogEntry);
     }
   }
-}
 
-async function handleMessageDelete(
-  client: Client,
-  auditLogEntry: GuildAuditLogsEntry,
-  logChannel: TextChannel
-) {
-  const { executorId, targetId, extra, createdAt } = auditLogEntry;
-  if (!executorId) return;
-  if (!targetId) return;
+  async handleMessageDelete(
+    logChannel: TextChannel,
+    auditLogEntry: GuildAuditLogsEntry
+  ) {
+    const { executorId, targetId, extra, createdAt } = auditLogEntry;
+    if (!executorId) return;
+    if (!targetId) return;
 
-  // Ensure the executor is cached.
-  const executor = await client.users.fetch(executorId);
+    // Ensure the executor is cached.
+    const executor = await this.client.users.fetch(executorId);
 
-  // Ensure the author whose message was deleted is cached.
-  const target = await client.users.fetch(targetId);
+    // Ensure the author whose message was deleted is cached.
+    const target = await this.client.users.fetch(targetId);
 
-  let channelString: string | null = null;
-  let guildId: string | null = null;
-  if (extra && extra instanceof TextChannel) {
-    channelString = makeChannelInfoString(extra);
-    guildId = extra.guild.id;
-  }
+    console.log(auditLogEntry);
 
-  const auditLogString = guildId
-    ? `[open the Audit Log](discord://-/guilds/${guildId}/settings/audit-log)`
-    : "open the Audit Log";
+    let channelString: string | null = null;
+    if (extra && "channel" in extra) {
+      if ("name" in extra.channel) {
+        const channelName = extra.channel.name;
+        const channelId = extra.channel.id;
+        channelString = `<#${channelId}> (${channelName} ${channelId})`;
+      }
+    }
 
-  const embed = new EmbedBuilder()
-    .setTitle("Audit Log • Message Deleted")
-    .setDescription(
-      `A message from ${makeUserInfoString(
-        target
-      )} was deleted by ${makeUserInfoString(executor)}${
-        channelString ? ` in ${channelString}` : ""
-      }.\n\n-# Discord does not send specific details about the deleted message itself in the Audit Log. Cross-reference with other logs or ${auditLogString} in Discord for more information.`
-    )
-    .setColor(0xff3e3e)
-    .setTimestamp(createdAt)
-    .setFooter({
-      text: "Audit Log entry sent",
-    })
-    .setThumbnail(
-      target.displayAvatarURL({
-        extension: "png",
-        size: 128,
+    const embed = new EmbedBuilder()
+      .setTitle("Audit Log • Message Deleted")
+      .setDescription(
+        `A message from ${makeUserInfoString(
+          target
+        )} was deleted by ${makeUserInfoString(executor)}${
+          channelString ? ` in ${channelString}` : ""
+        }.${this.auditLogDisclaimer}`
+      )
+      .setColor(0xff3e3e)
+      .setTimestamp(createdAt)
+      .setFooter({
+        text: "Audit Log entry sent",
       })
-    );
+      .setThumbnail(
+        target.displayAvatarURL({
+          extension: "png",
+          size: 128,
+        })
+      );
 
-  await logChannel.send({ embeds: [embed] });
+    await logChannel.send({ embeds: [embed] });
+  }
 }
