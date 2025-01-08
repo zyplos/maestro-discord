@@ -6,17 +6,35 @@ import type {
   ReadonlyCollection,
 } from "discord.js";
 import MaestroEvent from "../internals/MaestroEvent";
+import type MessageDeleteHandler from "./messageDelete";
 
 export default class MessageDeleteBulkHandler extends MaestroEvent<"messageDeleteBulk"> {
+  messageDeleteFunction: (message: Message | PartialMessage) => void;
+
   constructor(client: Client) {
     super(client);
     this.eventName = "messageDeleteBulk";
+
+    const messageDeleteClassInstance = client.maestroEvents.get(
+      "messageDelete.ts"
+    ) as MessageDeleteHandler;
+    if (!messageDeleteClassInstance) {
+      throw new Error(
+        "MessageDeleteBulkHandler expected MessageDeleteHandler to already be loaded"
+      );
+    }
+
+    this.messageDeleteFunction = messageDeleteClassInstance.preRun.bind(
+      messageDeleteClassInstance
+    );
   }
 
-  run(
+  async run(
     messages: ReadonlyCollection<string, Message<boolean> | PartialMessage>,
     channel: GuildTextBasedChannel
   ) {
-    this.client.logger.error("Method not implemented.");
+    for (const message of messages.values()) {
+      this.messageDeleteFunction(message);
+    }
   }
 }

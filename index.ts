@@ -91,6 +91,14 @@ declare module "discord.js" {
 }
 client.db = new DatabaseManager();
 
+declare module "discord.js" {
+  interface Client {
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    maestroEvents: Map<string, MaestroEvent<any> | LoggedEvent<any>>;
+  }
+}
+client.maestroEvents = new Map();
+
 // Load events for the discord.js client from the ./events folder
 // Files from the ./events folder can be named whatever you'd like, BUT they must default export a class that extends either LoggedEvent or MaestroEvent
 // See ./events/channelDelete.ts for an example of a LoggedEvent and ./events/ready.ts for an example of a MaestroEvent
@@ -104,19 +112,23 @@ const filePaths = (
 
 for (const filePath of filePaths) {
   const fullPath = join(eventsDir, filePath);
-  console.log(`Loading event file: ${fullPath}`);
+  client.logger.info(`Loading event file: ${fullPath}`);
 
   const importedModule = await import(fullPath);
   // es6 or cjs module
   const EventClass = importedModule.default || importedModule;
   const eventInstance = new EventClass(client);
   const eventName = eventInstance.eventName;
-  console.log(`Loaded event: ${eventName}`);
+  client.logger.info(
+    `Loaded event: ${eventName} | mapped to "${basename(filePath)}"`
+  );
 
   if (eventInstance instanceof LoggedEvent) {
     client.on(eventName, eventInstance.preRun.bind(eventInstance));
+    client.maestroEvents.set(basename(filePath), eventInstance);
   } else if (eventInstance instanceof MaestroEvent) {
     client.on(eventName, eventInstance.run.bind(eventInstance));
+    client.maestroEvents.set(basename(filePath), eventInstance);
   } else {
     throw new Error(
       `File ${eventName} does not extend LoggedEvent or MaestroEvent`
