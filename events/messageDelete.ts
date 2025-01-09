@@ -221,7 +221,7 @@ export default class MessageDeleteHandler extends LoggedEvent<"messageDelete"> {
       if (thread) {
         msgEmbed.addFields({
           name: "Thread",
-          value: `This was the start of the ${thread} (${thread.name} [${thread.id}]) thread.`,
+          value: `This was the start of the ${thread} **(${thread.name} ${thread.id})** thread.`,
         });
       } else {
         msgEmbed.addFields({
