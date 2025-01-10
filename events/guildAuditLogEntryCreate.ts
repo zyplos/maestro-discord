@@ -27,6 +27,7 @@ export default class GuildAuditLogEntryHandler extends LoggedEvent<"guildAuditLo
     auditLogEntry: GuildAuditLogsEntry,
     guild: Guild
   ) {
+    console.log(auditLogEntry);
     const { action } = auditLogEntry;
 
     if (action === AuditLogEvent.MessageDelete) {
@@ -36,6 +37,39 @@ export default class GuildAuditLogEntryHandler extends LoggedEvent<"guildAuditLo
     if (action === AuditLogEvent.ChannelDelete) {
       this.handleChannelDelete(logChannel, auditLogEntry);
     }
+
+    if (action === AuditLogEvent.ThreadDelete) {
+      this.handleThreadDelete(logChannel, auditLogEntry);
+    }
+  }
+
+  async handleThreadDelete(
+    logChannel: TextChannel,
+    auditLogEntry: GuildAuditLogsEntry
+  ) {
+    const { executorId, target, createdAt } = auditLogEntry;
+    if (!executorId) return;
+    if (!target) return;
+
+    if (!("name" in target)) return;
+
+    // Ensure the executor is cached.
+    const executor = await this.client.users.fetch(executorId);
+
+    const embed = new EmbedBuilder()
+      .setTitle("Audit Log • Thread Deleted")
+      .setDescription(
+        `Thread **${target.name} (${
+          target.id
+        })** was deleted by ${makeUserInfoString(executor)}.`
+      )
+      .setColor(0xff3e3e)
+      .setTimestamp(createdAt)
+      .setFooter({
+        text: "Audit Log entry sent",
+      });
+
+    await logChannel.send({ embeds: [embed] });
   }
 
   async handleChannelDelete(
@@ -56,8 +90,7 @@ export default class GuildAuditLogEntryHandler extends LoggedEvent<"guildAuditLo
       .setDescription(
         `Channel **${target.name} (${
           target.id
-        })** was deleted by ${makeUserInfoString(executor)}.
-        }${this.auditLogDisclaimer}`
+        })** was deleted by ${makeUserInfoString(executor)}.`
       )
       .setColor(0xff3e3e)
       .setTimestamp(createdAt)
