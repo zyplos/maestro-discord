@@ -119,16 +119,14 @@ for (const filePath of filePaths) {
   const EventClass = importedModule.default || importedModule;
   const eventInstance = new EventClass(client);
   const eventName = eventInstance.eventName;
-  client.logger.info(
-    `Loaded event: ${eventName} | mapped to "${basename(filePath)}"`
-  );
+  client.logger.info(`Loaded event: ${eventName} | mapped to "${filePath}"`);
 
   if (eventInstance instanceof LoggedEvent) {
     client.on(eventName, eventInstance.preRun.bind(eventInstance));
-    client.maestroEvents.set(basename(filePath), eventInstance);
+    client.maestroEvents.set(filePath, eventInstance);
   } else if (eventInstance instanceof MaestroEvent) {
     client.on(eventName, eventInstance.run.bind(eventInstance));
-    client.maestroEvents.set(basename(filePath), eventInstance);
+    client.maestroEvents.set(filePath, eventInstance);
   } else {
     throw new Error(
       `File ${eventName} does not extend LoggedEvent or MaestroEvent`
