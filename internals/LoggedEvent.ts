@@ -10,28 +10,35 @@ export default abstract class LoggedEvent<T extends keyof ClientEvents> {
     this.client = client;
   }
 
+  // this is what gets evoked when the event is fired
   async preRun(...args: ClientEvents[T]) {
+    const logChannel = await this.getLogChannel(...args);
+    if (!logChannel) return; // can't do anything without a log channel
+
+    this.run(logChannel, ...args);
+  }
+
+  async getLogChannel(...args: ClientEvents[T]) {
     const guild = await this.grabGuild(...args);
     // guild is null for partials, don't do anything
-    if (!guild) return;
+    if (!guild) return null;
 
     let logChannel: TextChannel | null = null;
     try {
       logChannel = await getServerLogChannel(this.client, guild.id);
     } catch (error) {
       if (error instanceof MaestroChannelError) {
-        return;
+        return null; // channel has become inaccessible since it was set up, nothing to do
       }
 
       this.client.logger.error(
         error,
         "Unexpected error fetching guild's log channel"
       );
-      return;
+      return null;
     }
-    if (!logChannel) return; // guild hasn't set up their log channel
 
-    this.run(logChannel, ...args);
+    return logChannel;
   }
 
   abstract grabGuild(...args: ClientEvents[T]): Guild | null;
@@ -39,6 +46,6 @@ export default abstract class LoggedEvent<T extends keyof ClientEvents> {
   abstract run(
     logChannel: TextChannel,
     ...args: ClientEvents[T]
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    // biome-ignore lint/suspicious/noExplicitAny: i can return whatever i want !!!
   ): any;
 }
