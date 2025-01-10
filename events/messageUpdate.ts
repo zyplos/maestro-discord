@@ -26,7 +26,8 @@ export default class MessageUpdateHandler extends LoggedEvent<"messageUpdate"> {
   }
 
   run(logChannel: TextChannel, oldMessage: Message, newMessage: Message) {
-    if (oldMessage.author.id === process.env.DISCORD_BOT_ID) return; // stuff from our bot shouldn't be logged
+    if (oldMessage.author?.id === process.env.DISCORD_BOT_ID) return; // stuff from our bot shouldn't be logged
+    if (newMessage.author?.id === process.env.DISCORD_BOT_ID) return; // stuff from our bot shouldn't be logged
     if (!newMessage.inGuild()) return; // don't care about DM messages
 
     let textDiffReport = "";
@@ -43,12 +44,22 @@ export default class MessageUpdateHandler extends LoggedEvent<"messageUpdate"> {
     const isNewBlank = isStringBlank(newMessage.content);
     if (oldMessage.content === newMessage.content) {
       textDiffReport = "(messages were the same)";
-    } else if (isOldBlank || isNewBlank) {
-      if (isOldBlank) textDiffReport += "(old message was blank)";
       textDiffReport += oldMessage.content
         ? `\`\`\`\n${escapeCodeBlock(oldMessage.content)}\n\`\`\``
         : "";
-      textDiffReport += "\n\n";
+    } else if (isOldBlank || isNewBlank) {
+      if (isOldBlank) {
+        if (oldMessage.partial) {
+          textDiffReport +=
+            "(message was sent too long ago, I wasn't keeping track of it)";
+        } else {
+          textDiffReport += "(old message was blank)";
+        }
+      }
+      textDiffReport += oldMessage.content
+        ? `\`\`\`\n${escapeCodeBlock(oldMessage.content)}\n\`\`\``
+        : "";
+      textDiffReport += "\n\nNew message:\n";
       if (isNewBlank) textDiffReport += "(new message was blank)";
       textDiffReport += newMessage.content
         ? `\`\`\`\n${escapeCodeBlock(newMessage.content)}\n\`\`\``
@@ -204,6 +215,9 @@ export default class MessageUpdateHandler extends LoggedEvent<"messageUpdate"> {
     //
     if (!didMessageChange && !didAttachmentsChange && !didEmbedsChange) {
       // console.log("SEEMS ONLY COMPONENTS CHANGED");
+      // ^^^ actually this will happen if the message has a thread and the thread gets deleted
+      // this will fire with removed thread data
+      // that isn't a property we care about logging so we can just ignore it
       return;
     }
 
