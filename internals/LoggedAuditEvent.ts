@@ -10,6 +10,8 @@ import LoggedEvent from "./LoggedEvent";
 export default abstract class LoggedAuditEvent extends LoggedEvent<"guildAuditLogEntryCreate"> {
   eventName = "guildAuditLogEntryCreate" as const;
   auditLogEvent: AuditLogEvent;
+  auditLogDisclaimer =
+    "\n\n-# Discord does not send specific details about the deleted message itself in the Audit Log. Cross-reference with other logs or open the Audit Log in Discord for more information.";
 
   constructor(client: Client, auditLogEvent: AuditLogEvent) {
     super(client);
