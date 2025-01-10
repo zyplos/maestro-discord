@@ -29,10 +29,43 @@ export default class GuildAuditLogEntryHandler extends LoggedEvent<"guildAuditLo
   ) {
     const { action } = auditLogEntry;
 
-    // Check only for deleted messages.
     if (action === AuditLogEvent.MessageDelete) {
       this.handleMessageDelete(logChannel, auditLogEntry);
     }
+
+    if (action === AuditLogEvent.ChannelDelete) {
+      this.handleChannelDelete(logChannel, auditLogEntry);
+    }
+  }
+
+  async handleChannelDelete(
+    logChannel: TextChannel,
+    auditLogEntry: GuildAuditLogsEntry
+  ) {
+    const { executorId, target, createdAt } = auditLogEntry;
+    if (!executorId) return;
+    if (!target) return;
+
+    if (!("name" in target)) return;
+
+    // Ensure the executor is cached.
+    const executor = await this.client.users.fetch(executorId);
+
+    const embed = new EmbedBuilder()
+      .setTitle("Audit Log • Channel Deleted")
+      .setDescription(
+        `Channel **${target.name} (${
+          target.id
+        })** was deleted by ${makeUserInfoString(executor)}.
+        }${this.auditLogDisclaimer}`
+      )
+      .setColor(0xff3e3e)
+      .setTimestamp(createdAt)
+      .setFooter({
+        text: "Audit Log entry sent",
+      });
+
+    await logChannel.send({ embeds: [embed] });
   }
 
   async handleMessageDelete(
