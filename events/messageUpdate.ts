@@ -193,12 +193,13 @@ export default class MessageUpdateHandler extends LoggedEvent<"messageUpdate"> {
     //
     const embedDiff = objectDiff(oldMessage.embeds, newMessage.embeds);
     const didEmbedsChange = Object.keys(embedDiff).length > 0;
+    const botTriggeredEmbedChange = didEmbedsChange && newMessage.author.bot;
 
     // ONLY LOG EMBEDS IF BOT
     // embeds from users (to my knowledge) only come from links
     // when a user posts a link, discord embeds it by updating the message
     // this gets spammy, so lets just ignore it
-    if (didEmbedsChange && newMessage.author.bot) {
+    if (botTriggeredEmbedChange) {
       embeds = [...[msgEmbed], ...oldMessage.embeds.slice(0, 8)];
       const embedCount = oldMessage.embeds.length;
       let embedText =
@@ -225,7 +226,11 @@ export default class MessageUpdateHandler extends LoggedEvent<"messageUpdate"> {
     // discard report
     // =====
     //
-    if (!didMessageChange && !didAttachmentsChange && !didEmbedsChange) {
+    if (
+      !didMessageChange &&
+      !didAttachmentsChange &&
+      !botTriggeredEmbedChange
+    ) {
       // console.log("SEEMS ONLY COMPONENTS CHANGED");
       // ^^^ actually this will happen if the message has a thread and the thread gets deleted
       // this will fire with removed thread data
