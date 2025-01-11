@@ -2,6 +2,7 @@ import type {
   Client,
   GuildTextBasedChannel,
   Message,
+  OmitPartialGroupDMChannel,
   PartialMessage,
   ReadonlyCollection,
 } from "discord.js";
@@ -9,7 +10,9 @@ import MaestroEvent from "../internals/MaestroEvent";
 import type MessageDeleteHandler from "./messageDelete";
 
 export default class MessageDeleteBulkHandler extends MaestroEvent<"messageDeleteBulk"> {
-  messageDeleteFunction: (message: Message | PartialMessage) => void;
+  messageDeleteFunction: (
+    message: OmitPartialGroupDMChannel<Message<boolean> | PartialMessage>
+  ) => Promise<void>;
 
   constructor(client: Client) {
     super(client);
@@ -30,7 +33,10 @@ export default class MessageDeleteBulkHandler extends MaestroEvent<"messageDelet
   }
 
   async run(
-    messages: ReadonlyCollection<string, Message<boolean> | PartialMessage>,
+    messages: ReadonlyCollection<
+      string,
+      OmitPartialGroupDMChannel<Message<boolean> | PartialMessage>
+    >,
     channel: GuildTextBasedChannel
   ) {
     for (const message of messages.values()) {

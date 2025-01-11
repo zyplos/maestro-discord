@@ -7,6 +7,7 @@ import {
   MessageType,
   type Client,
   type Message,
+  type OmitPartialGroupDMChannel,
   type PartialMessage,
   type TextChannel,
 } from "discord.js";
@@ -25,11 +26,14 @@ export default class MessageDeleteHandler extends LoggedEvent<"messageDelete"> {
     this.eventName = "messageDelete";
   }
 
-  grabGuild(oldMessage: Message) {
+  grabGuild(oldMessage: Message | PartialMessage) {
     return oldMessage.guild;
   }
 
-  async run(logChannel: TextChannel, messageDeleted: Message | PartialMessage) {
+  async run(
+    logChannel: TextChannel,
+    messageDeleted: OmitPartialGroupDMChannel<Message<boolean> | PartialMessage>
+  ) {
     if (messageDeleted.author?.id === process.env.DISCORD_BOT_ID) return; // stuff from our bot shouldn't be logged
 
     const messageChannel = messageDeleted.channel;

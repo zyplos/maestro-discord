@@ -10,6 +10,8 @@ import {
   type Message,
   type Embed,
   type TextChannel,
+  type OmitPartialGroupDMChannel,
+  type PartialMessage,
 } from "discord.js";
 import { diff as objectDiff } from "deep-object-diff";
 import * as textDiff from "diff";
@@ -21,11 +23,17 @@ export default class MessageUpdateHandler extends LoggedEvent<"messageUpdate"> {
     super(client);
     this.eventName = "messageUpdate";
   }
-  grabGuild(oldMessage: Message) {
+  grabGuild(
+    oldMessage: OmitPartialGroupDMChannel<Message<boolean> | PartialMessage>
+  ) {
     return oldMessage.guild;
   }
 
-  run(logChannel: TextChannel, oldMessage: Message, newMessage: Message) {
+  async run(
+    logChannel: TextChannel,
+    oldMessage: OmitPartialGroupDMChannel<Message<boolean> | PartialMessage>,
+    newMessage: OmitPartialGroupDMChannel<Message<boolean>>
+  ) {
     if (oldMessage.author?.id === process.env.DISCORD_BOT_ID) return; // stuff from our bot shouldn't be logged
     if (newMessage.author?.id === process.env.DISCORD_BOT_ID) return; // stuff from our bot shouldn't be logged
     if (!newMessage.inGuild()) return; // don't care about DM messages
@@ -40,7 +48,7 @@ export default class MessageUpdateHandler extends LoggedEvent<"messageUpdate"> {
     //
     const didMessageChange = oldMessage.content !== newMessage.content;
 
-    const isOldBlank = isStringBlank(oldMessage.content);
+    const isOldBlank = isStringBlank(oldMessage.content || "");
     const isNewBlank = isStringBlank(newMessage.content);
     if (oldMessage.content === newMessage.content) {
       textDiffReport = "(messages were the same)";
