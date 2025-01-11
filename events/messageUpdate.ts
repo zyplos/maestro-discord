@@ -186,12 +186,16 @@ export default class MessageUpdateHandler extends LoggedEvent<"messageUpdate"> {
     const embedDiff = objectDiff(oldMessage.embeds, newMessage.embeds);
     const didEmbedsChange = Object.keys(embedDiff).length > 0;
 
-    if (didEmbedsChange) {
-      embeds = [...[msgEmbed], ...oldMessage.embeds.slice(0, 5)];
+    // ONLY LOG EMBEDS IF BOT
+    // embeds from users (to my knowledge) only come from links
+    // when a user posts a link, discord embeds it by updating the message
+    // this gets spammy, so lets just ignore it
+    if (didEmbedsChange && newMessage.author.bot) {
+      embeds = [...[msgEmbed], ...oldMessage.embeds.slice(0, 8)];
       const embedCount = oldMessage.embeds.length;
       let embedText =
-        embedCount > 9
-          ? "Appending the first 9 embeds from the old message to the end of this report."
+        embedCount > 8
+          ? "Appending the first 8 embeds from the old message to the end of this report."
           : "The embeds from the old message will be appended to the end of this report.";
 
       // embeds were added
