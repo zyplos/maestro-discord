@@ -28,10 +28,10 @@ export default class ConfigCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
     super(creator, {
       name: "config",
-      description: "Check if I'm paying attention.",
+      description: "View Maestro's current settings and permissions.",
       contexts: [InteractionContextType.GUILD],
       requiredPermissions: ["MANAGE_GUILD"],
-      guildIDs: [process.env.DEV_GUILD_ID, "426394718172086273"],
+      // guildIDs: [process.env.DEV_GUILD_ID, "426394718172086273"],
       options: [
         {
           type: CommandOptionType.SUB_COMMAND,
@@ -100,33 +100,46 @@ export default class ConfigCommand extends SlashCommand {
     await ctx.defer();
     const client = this.client as Client;
 
+    const logChannelId = await client.db.getServerLogChannelId(guildId);
+
+    if (!logChannelId) {
+      return {
+        content:
+          "Maestro has not been set up yet and could not add the default AutoMod rules. Please do **/config set-logchannel** to have Maestro start monitoring chat.",
+        ephemeral: true,
+      };
+    }
+
     try {
       const guild = await client.guilds.fetch(guildId);
 
       const automod = guild.autoModerationRules;
 
+      client.logger.info(automod.cache);
+
       await automod.fetch();
 
+      client.logger.info(automod.cache);
+
       automod.cache.each((rule) => {
-        client.logger.debug(rule.guild.id);
-        client.logger.debug(rule.name);
-        client.logger.debug(rule.enabled);
-        client.logger.debug(rule.actions);
-        client.logger.debug(rule.enabled);
-        client.logger.debug(rule.eventType);
+        client.logger.info(rule.guild.id);
+        client.logger.info(rule.name);
+        client.logger.info(rule.enabled);
+        client.logger.info(rule.actions);
+        client.logger.info(rule.enabled);
+        client.logger.info(rule.eventType);
       });
 
       await automod.create({
         name: "Maestro Default Ruleset",
         eventType: AutoModerationRuleEventType.MessageSend,
         triggerType: AutoModerationRuleTriggerType.Keyword,
+        enabled: true,
         actions: [
           {
-            type: AutoModerationActionType.SendAlertMessage,
+            type: AutoModerationActionType.BlockMessage,
             metadata: {
-              durationSeconds: null,
-              channel: "613857379276029991",
-              customMessage: null,
+              customMessage: "Don't say bad words!",
             },
           },
         ],
@@ -140,6 +153,7 @@ export default class ConfigCommand extends SlashCommand {
         ephemeral: true,
       };
     } catch (error) {
+      console.log(error);
       if (error instanceof DiscordAPIError) {
         if (error.code === 50013) {
           return {
@@ -149,7 +163,9 @@ export default class ConfigCommand extends SlashCommand {
           };
         }
 
-        if (error.code === 50035) {
+        if (
+          error.message.includes("AUTO_MODERATION_MAX_RULES_OF_TYPE_EXCEEDED")
+        ) {
           return {
             content:
               "Your server's AutoMod already has the maximum amount of **Block Custom Words** rules. Please remove one before adding Maestro's Default Ruleset.",
@@ -187,7 +203,8 @@ export default class ConfigCommand extends SlashCommand {
 
     if (!logChannelId) {
       return {
-        content: "No log channel has been set for this server.",
+        content:
+          "Maestro has not been set up yet. Please do **/config set-logchannel** to have Maestro start filtering messages.",
         ephemeral: true,
       };
     }
