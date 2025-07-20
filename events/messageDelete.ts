@@ -1,5 +1,6 @@
 import {
   AttachmentBuilder,
+  ChannelType,
   DiscordAPIError,
   EmbedBuilder,
   escapeMarkdown,
@@ -34,18 +35,20 @@ export default class MessageDeleteHandler extends LoggedEvent<"messageDelete"> {
     logChannel: TextChannel,
     messageDeleted: OmitPartialGroupDMChannel<Message<boolean> | PartialMessage>
   ) {
-    if (messageDeleted.author?.id === process.env.DISCORD_BOT_ID) return; // stuff from our bot shouldn't be logged
-
-    const messageChannel = messageDeleted.channel;
-    if (!(messageChannel instanceof GuildChannel)) return;
-
-    const channelString = makeChannelInfoString(messageChannel);
+    console.log(messageDeleted);
 
     // can't do much with partial messages, return
     if (messageDeleted.partial) {
       // console.log(messageDeleted);
       return;
     }
+
+    if (messageDeleted.author?.id === process.env.DISCORD_BOT_ID) return; // stuff from our bot shouldn't be logged
+
+    const messageChannel = messageDeleted.channel;
+    if (!(messageChannel instanceof GuildChannel)) return;
+
+    const channelString = makeChannelInfoString(messageChannel);
 
     let formattedText: string;
     if (isStringBlank(messageDeleted.content)) {
@@ -211,6 +214,24 @@ export default class MessageDeleteHandler extends LoggedEvent<"messageDelete"> {
 
     // These are added as fields as they might break the 1024 character limit if it were all in just one field.
 
+    // message forwards
+    // for (const forwardedMessage of messageDeleted.messageSnapshots.values()) {
+    //   const forwardedChannel = forwardedMessage.channel;
+    //   if (!forwardedChannel) continue;
+
+    //   if (forwardedChannel.type !== ChannelType.GuildText) {
+    //     return;
+    //   }
+
+    //   const forwardChannelString = makeChannelInfoString(
+    //     forwardedMessage.channel
+    //   );
+    //   msgEmbed.addFields({
+    //     name: "Message Forward",
+    //     value: `This message was forwarded from ${forwardChannelString}.`,
+    //   });
+    // }
+
     // interaction (user commands)
     if (messageDeleted.interaction) {
       msgEmbed.addFields({
@@ -238,7 +259,10 @@ export default class MessageDeleteHandler extends LoggedEvent<"messageDelete"> {
     // webhookId
     const isFromAWebhook = messageDeleted.webhookId;
     // this will fail if it was also an interaction, so check for that too
-    if (isFromAWebhook && !messageDeleted.interaction) {
+    if (
+      isFromAWebhook &&
+      !(messageDeleted.interaction || messageDeleted.interactionMetadata)
+    ) {
       try {
         const webhookReference = await messageDeleted.fetchWebhook();
         msgEmbed.addFields({
