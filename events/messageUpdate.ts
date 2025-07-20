@@ -14,7 +14,7 @@ import {
   type PartialMessage,
 } from "discord.js";
 import { diff as objectDiff } from "deep-object-diff";
-import * as textDiff from "diff";
+import { diffWords } from "diff";
 import { isStringBlank, pluralize, truncateFileName } from "../internals/util";
 import LoggedEvent from "../internals/LoggedEvent";
 
@@ -76,7 +76,7 @@ export default class MessageUpdateHandler extends LoggedEvent<"messageUpdate"> {
       const oldText = escapeCodeBlock(oldMessage.content || "");
       const newText = escapeCodeBlock(newMessage.content || "");
 
-      const diff = textDiff.diffWordsWithSpace(oldText, newText);
+      const diff = diffWords(oldText, newText);
 
       textDiffReport = "```ansi\n";
 

@@ -6,7 +6,7 @@ import {
   Partials,
 } from "discord.js";
 import { GatewayServer, SlashCreator } from "slash-create";
-import { join, extname, basename } from "node:path";
+import { join, extname } from "node:path";
 import { readdir } from "node:fs/promises";
 import DatabaseManager from "./internals/database";
 import pino, { type Logger } from "pino";
