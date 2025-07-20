@@ -31,7 +31,9 @@
     "pino": "^9.7.0",
     "slash-create": "^6.5.0"
   },
-  "trustedDependencies": ["@biomejs/biome"],
+  "trustedDependencies": [
+    "@biomejs/biome"
+  ],
   "scripts": {
     "start": "bun index.ts",
     "dev": "bun --watch index.ts",
