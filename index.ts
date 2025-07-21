@@ -35,7 +35,7 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildModeration,
-    GatewayIntentBits.GuildEmojisAndStickers,
+    GatewayIntentBits.GuildExpressions,
     GatewayIntentBits.GuildVoiceStates,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMessageReactions,
@@ -102,7 +102,8 @@ declare module "discord.js" {
 client.maestroEvents = new Map();
 
 // Load events for the discord.js client from the ./events folder
-// Files from the ./events folder can be named whatever you'd like, BUT they must default export a class that extends either LoggedEvent or MaestroEvent
+// Files from the ./events folder can be named whatever you'd like,
+// BUT they must default export a class that extends either LoggedEvent or MaestroEvent
 // See ./events/channelDelete.ts for an example of a LoggedEvent and ./events/ready.ts for an example of a MaestroEvent
 
 // get all files from a directory and its subdirectories
