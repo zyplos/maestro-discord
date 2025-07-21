@@ -1,5 +1,5 @@
 import type { Client, Interaction } from "discord.js";
-import MaestroEvent from "../internals/MaestroEvent";
+import MaestroEvent from "@/internals/MaestroEvent";
 
 export default class InteractionCreateHandler extends MaestroEvent<"interactionCreate"> {
   constructor(client: Client) {

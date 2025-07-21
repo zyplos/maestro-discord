@@ -5,7 +5,7 @@ import {
   type Guild,
   type TextChannel,
 } from "discord.js";
-import LoggedEvent from "../internals/LoggedEvent";
+import LoggedEvent from "@/internals/LoggedEvent";
 
 export default class ThreadDeleteHandler extends LoggedEvent<"threadDelete"> {
   constructor(client: Client) {

@@ -6,7 +6,7 @@ import type {
   PartialMessage,
   ReadonlyCollection,
 } from "discord.js";
-import MaestroEvent from "../internals/MaestroEvent";
+import MaestroEvent from "@/internals/MaestroEvent";
 import type MessageDeleteHandler from "./messageDelete";
 
 export default class MessageDeleteBulkHandler extends MaestroEvent<"messageDeleteBulk"> {

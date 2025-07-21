@@ -15,8 +15,8 @@ import {
 } from "discord.js";
 import { diff as objectDiff } from "deep-object-diff";
 import { diffWords } from "diff";
-import { isStringBlank, pluralize, truncateFileName } from "../internals/util";
-import LoggedEvent from "../internals/LoggedEvent";
+import { isStringBlank, pluralize, truncateFileName } from "@/internals/util";
+import LoggedEvent from "@/internals/LoggedEvent";
 
 export default class MessageUpdateHandler extends LoggedEvent<"messageUpdate"> {
   constructor(client: Client) {

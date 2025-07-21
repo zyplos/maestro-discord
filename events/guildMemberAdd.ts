@@ -5,7 +5,7 @@ import {
   type Guild,
   type TextChannel,
 } from "discord.js";
-import LoggedEvent from "../internals/LoggedEvent";
+import LoggedEvent from "@/internals/LoggedEvent";
 
 export default class GuildMemberAddHandler extends LoggedEvent<"guildMemberAdd"> {
   constructor(client: Client) {

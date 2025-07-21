@@ -6,8 +6,8 @@ import {
   type NonThreadGuildBasedChannel,
   type TextChannel,
 } from "discord.js";
-import { channelTypes } from "../internals/util";
-import LoggedEvent from "../internals/LoggedEvent";
+import { channelTypes } from "@/internals/util";
+import LoggedEvent from "@/internals/LoggedEvent";
 export default class ChannelDeleteHandler extends LoggedEvent<"channelDelete"> {
   constructor(client: Client) {
     super(client);

@@ -12,14 +12,14 @@ import {
   type PartialMessage,
   type TextChannel,
 } from "discord.js";
-import LoggedEvent from "../internals/LoggedEvent";
+import LoggedEvent from "@/internals/LoggedEvent";
 import {
   makeChannelInfoString,
   isStringBlank,
   makeUserInfoString,
   truncateFileName,
   pluralize,
-} from "../internals/util";
+} from "@/internals/util";
 
 export default class MessageDeleteHandler extends LoggedEvent<"messageDelete"> {
   constructor(client: Client) {

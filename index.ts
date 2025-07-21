@@ -8,8 +8,8 @@ import {
 import { GatewayServer, SlashCreator } from "slash-create";
 import { join, extname } from "node:path";
 import { readdir } from "node:fs/promises";
-import DatabaseManager from "./internals/database";
 import pino, { type Logger } from "pino";
+import DatabaseManager from "./internals/database";
 import LoggedEvent from "./internals/LoggedEvent";
 import MaestroEvent from "./internals/MaestroEvent";
 

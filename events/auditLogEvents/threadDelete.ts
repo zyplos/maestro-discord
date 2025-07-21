@@ -6,8 +6,8 @@ import {
   type Client,
   EmbedBuilder,
 } from "discord.js";
-import LoggedAuditEvent from "../../internals/LoggedAuditEvent";
-import { makeUserInfoString } from "../../internals/util";
+import LoggedAuditEvent from "@/internals/LoggedAuditEvent";
+import { makeUserInfoString } from "@/internals/util";
 
 export default class AuditThreadDeleteHandler extends LoggedAuditEvent {
   constructor(client: Client) {

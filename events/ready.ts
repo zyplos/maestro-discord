@@ -1,5 +1,5 @@
 import type { Client } from "discord.js";
-import MaestroEvent from "../internals/MaestroEvent";
+import MaestroEvent from "@/internals/MaestroEvent";
 
 export default class ReadyHandler extends MaestroEvent<"ready"> {
   constructor(client: Client) {

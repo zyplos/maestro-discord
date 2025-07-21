@@ -5,7 +5,7 @@ import {
   EmbedBuilder,
   type TextChannel,
 } from "discord.js";
-import LoggedEvent from "../internals/LoggedEvent";
+import LoggedEvent from "@/internals/LoggedEvent";
 
 export default class GuildMemberRemoveHandler extends LoggedEvent<"guildMemberRemove"> {
   constructor(client: Client) {
