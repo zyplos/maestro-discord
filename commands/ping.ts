@@ -1,24 +1,34 @@
-import { SlashCommand, SlashCreator, CommandContext } from "slash-create";
+import {
+  SlashCommand,
+  type SlashCreator,
+  type CommandContext,
+  InteractionContextType,
+} from "slash-create";
 
 export default class PingCommand extends SlashCommand {
   constructor(creator: SlashCreator) {
     super(creator, {
       name: "ping",
       description: "Check if I'm paying attention.",
-      dmPermission: false,
+      contexts: [InteractionContextType.GUILD],
     });
   }
 
-  async run(_ctx: CommandContext) {
-    const derpspace = ["I'm online.", "Hm?", "Hello.", "Sentient and waiting.", "I'm here.", "*zzz..."];
-    const derpindex = Math.floor(Math.random() * derpspace.length);
+  async debugRun(ctx: CommandContext) {
+    return { content: "wow", ephemeral: true };
+  }
+
+  override async run(ctx: CommandContext) {
+    if (ctx.user.id === process.env.OWNER_ID) {
+      return this.debugRun(ctx);
+    }
 
     return {
       ephemeral: true,
       content: "\t",
       embeds: [
         {
-          description: derpspace[derpindex],
+          description: "...",
           color: 0x58d858,
           footer: {
             text: `${Math.round(this.client.ws.ping)}ms`,
