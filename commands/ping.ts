@@ -18,7 +18,7 @@ export default class PingCommand extends SlashCommand {
     return { content: "wow", ephemeral: true };
   }
 
-  async run(ctx: CommandContext) {
+  override async run(ctx: CommandContext) {
     if (ctx.user.id === process.env.OWNER_ID) {
       return this.debugRun(ctx);
     }

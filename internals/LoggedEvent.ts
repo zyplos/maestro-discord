@@ -43,9 +43,5 @@ export default abstract class LoggedEvent<T extends keyof ClientEvents> {
 
   abstract grabGuild(...args: ClientEvents[T]): Guild | null;
 
-  abstract run(
-    logChannel: TextChannel,
-    ...args: ClientEvents[T]
-    // biome-ignore lint/suspicious/noExplicitAny: i can return whatever i want !!!
-  ): any;
+  abstract run(logChannel: TextChannel, ...args: ClientEvents[T]): void;
 }

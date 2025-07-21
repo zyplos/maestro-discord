@@ -8,8 +8,5 @@ export default abstract class MaestroEvent<T extends keyof ClientEvents> {
     this.client = client;
   }
 
-  abstract run(
-    ...args: ClientEvents[T]
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  ): any;
+  abstract run(...args: ClientEvents[T]): void;
 }

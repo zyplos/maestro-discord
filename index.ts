@@ -93,8 +93,10 @@ client.db = new DatabaseManager();
 
 declare module "discord.js" {
   interface Client {
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-    maestroEvents: Map<string, MaestroEvent<any> | LoggedEvent<any>>;
+    maestroEvents: Map<
+      string,
+      MaestroEvent<keyof ClientEvents> | LoggedEvent<keyof ClientEvents>
+    >;
   }
 }
 client.maestroEvents = new Map();

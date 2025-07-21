@@ -31,8 +31,9 @@ export default class AuditChannelDeleteHandler extends LoggedAuditEvent {
     const embed = new EmbedBuilder()
       .setTitle("Audit Log • Channel Deleted")
       .setDescription(
-        `Channel **${target.name} (${
-          target.id
+        `Channel **${target.name} (${'id' in target ?
+          target.id :
+          "Unknown ID"
         })** was deleted by ${makeUserInfoString(executor)}.`
       )
       .setColor(0xff3e3e)

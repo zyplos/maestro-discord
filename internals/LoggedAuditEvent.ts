@@ -8,8 +8,10 @@ import type {
 import LoggedEvent from "./LoggedEvent";
 
 export default abstract class LoggedAuditEvent extends LoggedEvent<"guildAuditLogEntryCreate"> {
-  eventName = "guildAuditLogEntryCreate" as const;
+  override eventName = "guildAuditLogEntryCreate" as const;
+
   auditLogEvent: AuditLogEvent;
+
   auditLogDisclaimer =
     "\n\n-# Discord does not send specific details about the deleted message itself in the Audit Log. Cross-reference with other logs or open the Audit Log in Discord for more information.";
 
@@ -20,7 +22,7 @@ export default abstract class LoggedAuditEvent extends LoggedEvent<"guildAuditLo
   }
 
   // this is what gets evoked when the event is fired
-  async preRun(auditLogEntry: GuildAuditLogsEntry, guild: Guild) {
+  override async preRun(auditLogEntry: GuildAuditLogsEntry, guild: Guild) {
     if (auditLogEntry.action !== this.auditLogEvent) return; // not the audit log entry type we want
 
     const logChannel = await this.getLogChannel(auditLogEntry, guild);
@@ -38,10 +40,9 @@ export default abstract class LoggedAuditEvent extends LoggedEvent<"guildAuditLo
     return guild;
   }
 
-  abstract run(
+  abstract override run(
     logChannel: TextChannel,
     auditLogEntry: GuildAuditLogsEntry,
     guild: Guild
-    // biome-ignore lint/suspicious/noExplicitAny: i can return whatever i want !!!
-  ): any;
+  ): void;
 }

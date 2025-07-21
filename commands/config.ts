@@ -13,9 +13,6 @@ import {
   type CommandContext,
   InteractionContextType,
   CommandOptionType,
-  ComponentType,
-  TextInputStyle,
-  ButtonStyle,
 } from "slash-create";
 import { getTextChannel, validateChannelPermissions } from "../internals/util";
 import badWords from "../internals/badWords.json";
@@ -276,7 +273,7 @@ export default class ConfigCommand extends SlashCommand {
     }
   }
 
-  async run(ctx: CommandContext) {
+  override async run(ctx: CommandContext) {
     const guildId = ctx.guildID;
 
     if (!guildId) {

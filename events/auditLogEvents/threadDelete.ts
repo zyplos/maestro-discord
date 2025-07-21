@@ -31,7 +31,7 @@ export default class AuditThreadDeleteHandler extends LoggedAuditEvent {
       .setTitle("Audit Log • Thread Deleted")
       .setDescription(
         `Thread **${target.name} (${
-          target.id
+          "id" in target ? target.id : "Unknown ID"
         })** was deleted by ${makeUserInfoString(executor)}.`
       )
       .setColor(0xff3e3e)
